@@ -107,6 +107,44 @@ at the default draft 2) plus ~480 MiB for the draft context once it shares the t
 there is worth 2.2x over no drafting. `MIRAI_SPEC=0` moves the line to ~80k positions at the cost of the 1.85x below
 it (`docs/REPORT.md`, sections 5b and 6e).
 
+## Abliterated serve (optional, off by default)
+
+Mirai S refuses like its base model. The weights are trellis codes, so the usual abliteration (editing the matrices)
+cannot be written back. alesha-pro measured the refusal direction on the quantized model itself and published it as a
+1.3 MB control vector next to the weights; the engine removes it from the residual stream after every layer at run
+time (`h -= (h.v) v`, `--cvec-mode project`). Nothing changes unless you pass the file.
+
+```bash
+hf download alesha-pro/Qwen3.8-27B-S-mirai-GGUF Qwen3.8-27B-S-mirai-refusal-direction.gguf --local-dir models
+MIRAI_CVEC=models/Qwen3.8-27B-S-mirai-refusal-direction.gguf ./start-server.sh
+```
+
+On any platform it is two more arguments on the `llama-server` line:
+`--control-vector-scaled models/Qwen3.8-27B-S-mirai-refusal-direction.gguf:1.0 --cvec-mode project`
+(`start-server.ps1` does not pass them yet). The reference fork `alesha-pro/llama.cpp-mirai-s` takes the same two arguments.
+
+Measured on this serve (Ubuntu, RTX 3090, the template's system block in every prompt; `receipts/ubuntu-3090/`).
+A refusal is a regex on the start of the answer, greedy unless marked sampled:
+
+| | without the vector | with the vector |
+| --- | ---: | ---: |
+| 64 harmful instructions (AdvBench, not used for the direction), thinking off | 64 refused | **0** |
+| 82 held-out behaviours (JailbreakBench, non-AdvBench rows), thinking off | 78 | **0** |
+| 24 harmful instructions, thinking on | 23 | **1** |
+| 10-prompt probe, sampled, thinking off / on | 10 / 8 | **0 / 0** |
+| 32 ordinary instructions refused | 0 | 0 |
+| KL to the model without the vector, prose / code | | 0.019 / 0.009 |
+| same top token as without the vector, prose / code | | 94.0% / 97.1% |
+| decode tok/s on short prompts, thinking off / on (MTP acceptance) | 69.9 / 67.4 (71% / 65%) | 69.7 / 67.2 (70% / 66%) |
+| decode at 60k / 120k / 180k | 27.9 / 9.5 / 5.8 | 27.8 / 9.4 / 5.9 |
+| 5 agent coding tasks through a harness, original tests | | 5 of 5 (one on a second run: the first hit its 10 minute cap) |
+
+Tool calls, the three effort words and an image request (encoder on the CPU, `MIRAI_MMPROJ`) were checked with the
+vector on. Limits: the counts are a regex over 10 to 82 prompts, not a human read; the direction was measured with this
+repo's template and with the GGUF's own, with and without a system message, thinking on and off, and a very different
+system prompt may leave more refusals; quality with the vector was checked by KL and the agent tasks, not by the suite.
+What the model writes with the vector on is the user's responsibility.
+
 ## Known limits and issues
 
 - **12 GB is the floor.** 8.2 GB of weights stay resident; this model does not fit an 8 GB card, and the launcher
@@ -120,7 +158,8 @@ it (`docs/REPORT.md`, sections 5b and 6e).
   on this model is not measured here, so it is a knob, not a default.
 - **Host RAM**: the full 262k cache keeps ~7 GB of K/V in pinned system RAM; the box needs that much free.
 - **One slot** (`-np 1`), as the reference fork also requires for this model.
-- **Windows launcher.** The Linux command line above is the same recipe, untested here.
+- **Two launchers.** `start-server.ps1` (Windows) sizes the VRAM line and starts the layer. `start-server.sh` (Linux)
+  starts the raw server with the line you give it; the layer in front of it on Linux is not wired or tested.
 - **Effort words outside the allow-list are normalized to medium** by design (harness-proofing). Agents that want
   "low" need `MIRAI_EFFORT_ALLOWED=low,medium` at launch; a request's effort is never silently honored or rejected,
   it is mapped, and the server log says so.
@@ -138,10 +177,11 @@ it (`docs/REPORT.md`, sections 5b and 6e).
 | --- | --- |
 | `engine/` | submodule: [`professorpalmer/llama.cpp-ada-mirai`](https://github.com/professorpalmer/llama.cpp-ada-mirai). PrismML's llama.cpp fork with the serving patches (tiered KV cache, draft window and tail, reasoning flags, batch-invariant kernels, op timing) and Mirai's codec ported on top (ggml types 90-93, CPU and CUDA kernels, rotation and scale tensors, split attention gate, graph hook), plus the prefill work done here (one-plane FFN prompt numerics, packed 1-bit KQ mask, level-decode chunking). |
 | `start-server.ps1` | the launcher: sizes the VRAM line from measured fixed costs, starts the layer in front of llama-server. |
+| `start-server.sh` | Linux: the raw server with the same flags; optional images (`MIRAI_MMPROJ`) and the refusal vector (`MIRAI_CVEC`). |
 | `tooling/` | `build_engine.bat` (Ninja + pip CUDA 13, sm_89), `install_bin.ps1`, `serve.ps1` / `stop.ps1` (hidden test server, log and PID files). |
 | `layer/`, `suite/` | the layer and the long exact-work suite, from [`bonsai-ada-surgery`](https://github.com/professorpalmer/bonsai-ada-surgery) with the changes made here (`layer/ORIGIN.md`). |
 | `bench/` | the measurement scripts and every run's scoreboard and results (`ML1`..`ML2f`, `E18`..`E21`, HumanEval arms). |
-| `receipts/` | small text receipts cited by the docs: profiles, greedy dumps from the model's fork, probe logs. |
+| `receipts/` | small text receipts cited by the docs: profiles, greedy dumps from the model's fork, probe logs; `ubuntu-3090/` is the Linux check and the abliteration counts. |
 | `templates/bonsai-template.jinja` | the chat template used for every measurement (reasoning_effort, thinking on/off). |
 | `docs/REPORT.md`, `docs/PREFILL.md`, `docs/ROADMAP.md` | what was found, the prefill investigation, what is left. |
 
@@ -157,8 +197,41 @@ tooling\build_engine.bat llama-server      # ~30 min first time
 tooling\install_bin.ps1                      # copies the result into bin\ next to the CUDA runtime DLLs
 ```
 
-Linux: the engine builds like any llama.cpp (`cmake -S engine -B build -DGGML_CUDA=ON`); the flags behind the
-numbers are one `llama-server` command line:
+Linux (checked on Ubuntu 22.04, RTX 3090, CUDA 12.8 toolkit, gcc 11.4, cmake 3.22; `receipts/ubuntu-3090/`):
+
+```bash
+git clone --recurse-submodules https://github.com/professorpalmer/mirai-s-ada && cd mirai-s-ada
+cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DLLAMA_CURL=OFF \
+  -DCUDAToolkit_ROOT=/usr/local/cuda -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=86
+cmake --build build -j --target llama-server            # about 4 min on 32 threads
+hf download alesha-pro/Qwen3.8-27B-S-mirai-GGUF --local-dir models
+MIRAI_KV_VRAM_CELLS=44000 ./start-server.sh             # raw server on http://127.0.0.1:8080/v1
+```
+
+Point both CUDA paths at a CUDA 12 or 13 toolkit. On this box an older system `nvcc` was first on the PATH and the
+configure step failed without the compiler path; with a system cuBLAS 11 the int8 GEMM of the prompt path runs on a
+tile about half as fast. `CMAKE_CUDA_ARCHITECTURES` is your GPU generation (86 = RTX 30, 89 = RTX 40); without it an
+older cmake builds the kernels for every generation, which took 17 minutes here. A fresh clone of this branch was built that way
+and served through `start-server.sh` as a last check.
+`start-server.sh` is the raw server only: the same flags and environment as `start-server.ps1`, no layer, no automatic
+sizing of the VRAM line (set `MIRAI_KV_VRAM_CELLS` for your card). The knobs table above applies; it also reads
+`MIRAI_HOST`, `MIRAI_API_KEY`, `MIRAI_MMPROJ` (images, encoder on the CPU) and `MIRAI_CVEC` (below).
+
+Measured on that Ubuntu box with the 12 GB recipe (44,000 positions in VRAM, the card at 300 W, PCIe 3.0 x16):
+
+| | Ubuntu 22.04, RTX 3090 |
+| --- | ---: |
+| greedy identity against the reference dumps, thinking off | 5 of 5 |
+| thinking on (the 300-token reference is a prefix of the output) | 5 of 5 |
+| VRAM at load / peak over a 180k-token prompt | 11,533 / 11,719 MiB |
+| decode, tok/s, at 8k / 60k / 120k / 180k | 66.9 / 27.9 / 9.5 / 5.8 |
+| prefill, 8k-token prompt | 1,124 tok/s |
+| MTP draft acceptance, thinking off / on | 71% / 65% |
+
+Past the VRAM line this box is slower than the RTX 4070 above (27.9 against 40.3 tok/s at 60k). The tail is read
+over PCIe 3.0 here; that is the likely reason and it was not isolated.
+
+The flags behind the numbers are one `llama-server` command line:
 
 ```bash
 llama-server -m Qwen3.8-27B-S-mirai.gguf -ngl 99 -fa on -c 262144 -np 1 -ctk q8_0 -ctv q8_0 --kv-vram-cells 44000 \
@@ -168,7 +241,7 @@ llama-server -m Qwen3.8-27B-S-mirai.gguf -ngl 99 -fa on -c 262144 -np 1 -ctk q8_
   --chat-template-file templates/bonsai-template.jinja --chat-template-kwargs '{"reasoning_effort":"medium"}' --jinja
 ```
 
-with `GGML_MIRAI_PREFILL_PLANES=ffn` in the environment. Untested on Linux here.
+with `GGML_CUDA_BATCH_INVARIANT=1` and `GGML_MIRAI_PREFILL_PLANES=ffn` in the environment (`start-server.sh` sets both).
 
 ## Measure it yourself
 
@@ -193,6 +266,7 @@ python bench\determinism_probe.py                             # same request and
 
 ## Credits
 
-alesha-pro for the model, its codec and the llama.cpp fork it ships with. PrismML for the llama.cpp fork the engine
+alesha-pro for the model, its codec and the llama.cpp fork it ships with, and for the refusal vector, the projection
+mode and the Linux check. PrismML for the llama.cpp fork the engine
 is built on. sudoingX for the planar activation layout and batch-invariant mode in that fork. MIT for everything here;
 the weights are their authors'. Not affiliated with alesha-pro or PrismML.
