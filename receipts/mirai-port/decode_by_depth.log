@@ -1,0 +1,18 @@
+=== decode by depth 2026-10-06 15:27 engine f11c75618; kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin ; model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4
+depth 0: mean decode 76.4 tok/s; vram 11657 MiB
+depth 16000: mean decode 72.1 tok/s; vram 11657 MiB
+depth 32000: mean decode 68.4 tok/s; vram 11657 MiB
+depth 48000: mean decode 66.1 tok/s; vram 11657 MiB
+depth 60000: mean decode 61.5 tok/s; vram 11657 MiB
+depth 120000: mean decode 19.5 tok/s; vram 11657 MiB
+depth 180000: ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host; vram 26 MiB
+=== done 15:34
+=== decode by depth 2026-10-06 16:11 engine f11c75618; line 57,856, mtpq4 file, shared pool; REPLAY of the sequence after the 15:34 abort (bench/deep_seq_probe.sh product), all depths served
+depth 0: mean decode 76.6 tok/s; vram 11523 MiB
+depth 16000: mean decode 72.6 tok/s; vram 11657 MiB
+depth 32000: mean decode 68.8 tok/s; vram 11657 MiB
+depth 48000: mean decode 66.4 tok/s; vram 11657 MiB
+depth 60000: mean decode 61.7 tok/s; vram 11657 MiB
+depth 120000: mean decode 19.5 tok/s; vram 11657 MiB
+depth 180000: mean decode 11.4 tok/s; vram 11657 MiB
+=== done 16:11

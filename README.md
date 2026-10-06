@@ -90,6 +90,7 @@ the CPU's integrated GPU (see "Getting more positions into VRAM").
 | `MIRAI_LEVELS_MIB` | 128 | level-decode chunk footprint for long prompts |
 | `MIRAI_SHARED_POOL` | 1 | one transient CUDA pool for the target and draft contexts, 256-token draft micro-batch: 188 MiB of VRAM back (~5.7k positions), outputs, decode and acceptance unchanged (E23); 0 reverts |
 | `MIRAI_LAYER` | 1 | 0 = no layer |
+| `MIRAI_STDERR_FILE` / `MIRAI_RESTARTS` | none / 3 | keep the server's raw stderr in this file (assert text); restarts after an abort before the launcher gives up |
 | `MIRAI_PORT`, `MIRAI_MODEL`, `MIRAI_LOG_FILE` | 8080, auto, none | model: `models\Qwen3.8-27B-S-mirai-mtpq4.gguf` when present, else the published file |
 
 ### Getting more positions into VRAM
@@ -106,44 +107,6 @@ at the default draft 2) plus ~480 MiB for the draft context once it shares the t
 34,816 bytes, so every 100 MiB is ~3k positions. Past the line every step reads the host tail over PCIe; drafting
 there is worth 2.2x over no drafting. `MIRAI_SPEC=0` moves the line to ~80k positions at the cost of the 1.85x below
 it (`docs/REPORT.md`, sections 5b and 6e).
-
-## Abliterated serve (optional, off by default)
-
-Mirai S refuses like its base model. The weights are trellis codes, so the usual abliteration (editing the matrices)
-cannot be written back. alesha-pro measured the refusal direction on the quantized model itself and published it as a
-1.3 MB control vector next to the weights; the engine removes it from the residual stream after every layer at run
-time (`h -= (h.v) v`, `--cvec-mode project`). Nothing changes unless you pass the file.
-
-```bash
-hf download alesha-pro/Qwen3.8-27B-S-mirai-GGUF Qwen3.8-27B-S-mirai-refusal-direction.gguf --local-dir models
-MIRAI_CVEC=models/Qwen3.8-27B-S-mirai-refusal-direction.gguf ./start-server.sh
-```
-
-On any platform it is two more arguments on the `llama-server` line:
-`--control-vector-scaled models/Qwen3.8-27B-S-mirai-refusal-direction.gguf:1.0 --cvec-mode project`
-(`start-server.ps1` does not pass them yet). The reference fork `alesha-pro/llama.cpp-mirai-s` takes the same two arguments.
-
-Measured on this serve (Ubuntu, RTX 3090, the template's system block in every prompt; `receipts/ubuntu-3090/`).
-A refusal is a regex on the start of the answer, greedy unless marked sampled:
-
-| | without the vector | with the vector |
-| --- | ---: | ---: |
-| 64 harmful instructions (AdvBench, not used for the direction), thinking off | 64 refused | **0** |
-| 82 held-out behaviours (JailbreakBench, non-AdvBench rows), thinking off | 78 | **0** |
-| 24 harmful instructions, thinking on | 23 | **1** |
-| 10-prompt probe, sampled, thinking off / on | 10 / 8 | **0 / 0** |
-| 32 ordinary instructions refused | 0 | 0 |
-| KL to the model without the vector, prose / code | | 0.019 / 0.009 |
-| same top token as without the vector, prose / code | | 94.0% / 97.1% |
-| decode tok/s on short prompts, thinking off / on (MTP acceptance) | 69.9 / 67.4 (71% / 65%) | 69.7 / 67.2 (70% / 66%) |
-| decode at 60k / 120k / 180k | 27.9 / 9.5 / 5.8 | 27.8 / 9.4 / 5.9 |
-| 5 agent coding tasks through a harness, original tests | | 5 of 5 (one on a second run: the first hit its 10 minute cap) |
-
-Tool calls, the three effort words and an image request (encoder on the CPU, `MIRAI_MMPROJ`) were checked with the
-vector on. Limits: the counts are a regex over 10 to 82 prompts, not a human read; the direction was measured with this
-repo's template and with the GGUF's own, with and without a system message, thinking on and off, and a very different
-system prompt may leave more refusals; quality with the vector was checked by KL and the agent tasks, not by the suite.
-What the model writes with the vector on is the user's responsibility.
 
 ## Known limits and issues
 
@@ -169,7 +132,13 @@ What the model writes with the vector on is the user's responsibility.
   the layer's API check reduces invented names, it does not remove the model's limits.
 - **Sampled runs are deterministic for an identical request and seed**, with rare late divergence under cache
   reuse (one in twelve 70k-character traces); treat small paired deltas as noise (`docs/REPORT.md`, determinism probe).
-- Report issues with the launcher's printed configuration block and `logs\product.log`.
+- **One abort seen, not reproduced.** On 10-06 evening a 180k-token request ended llama-server with an assert-style
+  fail-fast once; the same request, the same sequence of requests and the bare server at 120k/180k then ran clean
+  four times (`docs/REPORT.md` 6e). The launcher now supervises the server: an aborted server is restarted (up to
+  `MIRAI_RESTARTS`, default 3, within ten minutes), the event is written to the launcher's output, and with
+  `MIRAI_STDERR_FILE=logs\product.stderr` the server's raw stderr (where an assert prints) is kept.
+- Report issues with the launcher's printed configuration block, `logs\product.log` and, if you set it,
+  `logs\product.stderr`.
 
 ## What is here
 
@@ -177,11 +146,11 @@ What the model writes with the vector on is the user's responsibility.
 | --- | --- |
 | `engine/` | submodule: [`professorpalmer/llama.cpp-ada-mirai`](https://github.com/professorpalmer/llama.cpp-ada-mirai). PrismML's llama.cpp fork with the serving patches (tiered KV cache, draft window and tail, reasoning flags, batch-invariant kernels, op timing) and Mirai's codec ported on top (ggml types 90-93, CPU and CUDA kernels, rotation and scale tensors, split attention gate, graph hook), plus the prefill work done here (one-plane FFN prompt numerics, packed 1-bit KQ mask, level-decode chunking). |
 | `start-server.ps1` | the launcher: sizes the VRAM line from measured fixed costs, starts the layer in front of llama-server. |
-| `start-server.sh` | Linux: the raw server with the same flags; optional images (`MIRAI_MMPROJ`) and the refusal vector (`MIRAI_CVEC`). |
+| `start-server.sh` | Linux (from alesha-pro): the raw server with the same flags; optional images (`MIRAI_MMPROJ`) and a control vector (`MIRAI_CVEC`, projected out of the residual stream). |
 | `tooling/` | `build_engine.bat` (Ninja + pip CUDA 13, sm_89), `install_bin.ps1`, `serve.ps1` / `stop.ps1` (hidden test server, log and PID files). |
 | `layer/`, `suite/` | the layer and the long exact-work suite, from [`bonsai-ada-surgery`](https://github.com/professorpalmer/bonsai-ada-surgery) with the changes made here (`layer/ORIGIN.md`). |
 | `bench/` | the measurement scripts and every run's scoreboard and results (`ML1`..`ML2f`, `E18`..`E21`, HumanEval arms). |
-| `receipts/` | small text receipts cited by the docs: profiles, greedy dumps from the model's fork, probe logs; `ubuntu-3090/` is the Linux check and the abliteration counts. |
+| `receipts/` | small text receipts cited by the docs: profiles, greedy dumps from the model's fork, probe logs; `ubuntu-3090/` is alesha-pro's Linux check (RTX 3090). |
 | `templates/bonsai-template.jinja` | the chat template used for every measurement (reasoning_effort, thinking on/off). |
 | `docs/REPORT.md`, `docs/PREFILL.md`, `docs/ROADMAP.md` | what was found, the prefill investigation, what is left. |
 
@@ -217,7 +186,8 @@ and served through `start-server.sh` as a last check.
 sizing of the VRAM line (set `MIRAI_KV_VRAM_CELLS` for your card). The knobs table above applies; it also reads
 `MIRAI_HOST`, `MIRAI_API_KEY`, `MIRAI_MMPROJ` (images, encoder on the CPU) and `MIRAI_CVEC` (below).
 
-Measured on that Ubuntu box with the 12 GB recipe (44,000 positions in VRAM, the card at 300 W, PCIe 3.0 x16):
+Measured by alesha-pro on that Ubuntu box with the 12 GB recipe of 10-06 morning (44,000 positions in VRAM, the
+published GGUF, the card at 300 W, PCIe 3.0 x16; `receipts/ubuntu-3090/`):
 
 | | Ubuntu 22.04, RTX 3090 |
 | --- | ---: |
@@ -228,8 +198,9 @@ Measured on that Ubuntu box with the 12 GB recipe (44,000 positions in VRAM, the
 | prefill, 8k-token prompt | 1,124 tok/s |
 | MTP draft acceptance, thinking off / on | 71% / 65% |
 
-Past the VRAM line this box is slower than the RTX 4070 above (27.9 against 40.3 tok/s at 60k). The tail is read
-over PCIe 3.0 here; that is the likely reason and it was not isolated.
+Past the VRAM line this box is slower than the RTX 4070 (27.9 against the 4070's 40.3 tok/s at 60k when its line
+was also 44-45k; the 4070 now holds 60k inside the line, see the table at the top). The tail is read over PCIe 3.0
+here; that is the likely reason and it was not isolated.
 
 The flags behind the numbers are one `llama-server` command line:
 

@@ -218,6 +218,16 @@ round correct, 76.5 / 71.9 tok/s at 0 / 16k (`product_smoke.log` 15:26). Decode 
 48k / 60k / 120k / 180k; 60k is inside the line now (40.3 before), past it the PCIe tail is unchanged. The 800 MiB
 margin soak on the new line is in `margin_soak.log` (same day).
 
+**E24, one abort.** The first decode-by-depth receipt on the new line ended at 180k: the request's connection was
+reset and llama-server was gone (Windows Application log: ucrtbase fail-fast 0xc0000409, the signature of an assert
+or `std::terminate`; the server's log was overwritten by the next restart before the text was read). It did not
+reproduce: the bare server at 120k then 180k, twice (19.6 / 11.5 tok/s), and the product with the exact request
+sequence 0 through 180k (11.4 tok/s at 180k), `deep_crash_probe.log`, `deep_seq_probe.log`. The only difference
+left was the traffic before the sequence (the smoke's identity prompts and tool round). Mitigation shipped instead
+of a cause: the launcher restarts an aborted server and can keep its raw stderr (`MIRAI_STDERR_FILE`), so the next
+occurrence leaves its assert text; `stop.ps1` writes a flag first so an intended stop is not restarted (both
+verified: a killed server was back in 12 s, a stop stayed stopped).
+
 Not changed, by decision: the K/V cache stays q8_0. A q4_0 cache would double the positions in VRAM; the earlier
 KL-by-position receipt on this stack (1 flipped top token in 48 at depth for q4_0 against 1 in 160 for q8_0) is not
 a measurement on this model, so q4_0 is a knob until it is.

@@ -228,31 +228,53 @@ if ($env:MIRAI_LOG_FILE) {
     $LogArgs = @('--log-file', $lf)
 }
 Set-Location $Bin
+# Everything after this line is the server's command line, as one array (printed into the stderr file for receipts).
+[string[]]$ServerArgs = @() + $TierArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + @(
+    '--reasoning-budget', "$ThinkBudget",
+    '-n', '24576',
+    '-m', $Model,
+    '--chat-template-file', (Join-Path $Root 'templates\bonsai-template.jinja'),
+    '-ngl', '99', '-fa', 'on', '-c', "$Ctx", '-np', '1', '-b', '2048', '-ub', "$UBatch", '-ctk', $Ctk, '-ctv', $Ctk,
+    '--host', $ListenHost, '--port', "$ListenPort", '--alias', 'mirai-s-27b', '--jinja',
+    '--prio', '2', '--poll', '100', '--metrics', '--api-key', $ApiKey,
+    '--temp', '1.0', '--top-p', '0.95', '--top-k', '20')
+# MIRAI_STDERR_FILE=path: keep the server's raw stderr (GGML_ASSERT text and CUDA errors bypass the log file). The
+# server then runs under cmd.exe so the file handle has a parent for its whole life (a PowerShell redirect of a native
+# command's stderr wraps every line in an error record and, with ErrorActionPreference Stop, aborts on the first one).
+$StdErrFile = if ($env:MIRAI_STDERR_FILE) { if ([IO.Path]::IsPathRooted($env:MIRAI_STDERR_FILE)) { $env:MIRAI_STDERR_FILE } else { Join-Path $Root $env:MIRAI_STDERR_FILE } } else { $null }
+# Supervision: an aborted server (an assert, a CUDA error) is restarted up to MIRAI_RESTARTS times (default 3) within a
+# 10-minute window; a server that ran longer than that resets the count. tooling\stop.ps1 writes logs\product.stop
+# before killing the server, which ends the loop instead of restarting it.
+$StopFlag = Join-Path $Root 'logs\product.stop'
+New-Item -ItemType Directory -Force (Join-Path $Root 'logs') | Out-Null
+Remove-Item $StopFlag -ErrorAction SilentlyContinue
+$MaxRestarts = if ($env:MIRAI_RESTARTS) { [int]$env:MIRAI_RESTARTS } else { 3 }
+$Restarts = 0
 try {
-& .\llama-server.exe @TierArgs @SpecArgs @BsArgs @BudgetMsgArgs @HarnessArgs @LogArgs @MaskArgs `
-    --reasoning-budget $ThinkBudget `
-    -n 24576 `
-    -m $Model `
-    --chat-template-file (Join-Path $Root 'templates\bonsai-template.jinja') `
-    -ngl 99 `
-    -fa on `
-    -c $Ctx `
-    -np 1 `
-    -b 2048 `
-    -ub $UBatch `
-    -ctk $Ctk `
-    -ctv $Ctk `
-    --host $ListenHost `
-    --port $ListenPort `
-    --alias mirai-s-27b `
-    --jinja `
-    --prio 2 `
-    --poll 100 `
-    --metrics `
-    --api-key $ApiKey `
-    --temp 1.0 `
-    --top-p 0.95 `
-    --top-k 20
+while ($true) {
+    $Started = Get-Date
+    if ($StdErrFile) {
+        New-Item -ItemType Directory -Force (Split-Path $StdErrFile) | Out-Null
+        $Quoted = $ServerArgs | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } }
+        $CmdLine = '"' + (Join-Path $Bin 'llama-server.exe') + '" ' + ($Quoted -join ' ') + ' 2>> "' + $StdErrFile + '"'
+        Add-Content -Path $StdErrFile -Value ("=== {0:yyyy-MM-dd HH:mm:ss} start: {1}" -f $Started, ($Quoted -join ' ' -replace $ApiKey, '<key>'))
+        # cmd /s /c "...": the outer quotes are stripped as a pair and everything inside is passed as written
+        $Proc = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/s', '/c', ('"' + $CmdLine + '"')) -WorkingDirectory $Bin -NoNewWindow -Wait -PassThru
+        $Code = $Proc.ExitCode
+    } else {
+        & .\llama-server.exe @ServerArgs
+        $Code = $LASTEXITCODE
+    }
+    $Ran = ((Get-Date) - $Started).TotalSeconds
+    if (Test-Path $StopFlag) { Remove-Item $StopFlag -ErrorAction SilentlyContinue; break }   # tooling\stop.ps1
+    if ($Code -eq 0) { break }
+    if ($Ran -gt 600) { $Restarts = 0 }
+    $Restarts++
+    $Msg = ("{0:HH:mm:ss} llama-server exited with code {1} after {2:N0} s" -f (Get-Date), $Code, $Ran)
+    if ($Restarts -gt $MaxRestarts) { Write-Host "$Msg; restart limit ($MaxRestarts) reached, giving up"; break }
+    Write-Host "$Msg; restarting ($Restarts of $MaxRestarts)"
+    Start-Sleep -Seconds 3
+}
 } finally {
     if ($LayerProc -and -not $LayerProc.HasExited) { Stop-Process -Id $LayerProc.Id -Force -ErrorAction SilentlyContinue }
 }

@@ -1,0 +1,10 @@
+=== E24b sequence on the PRODUCT 2026-10-06 15:58 engine f11c75618; kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VR
+product depth 0: mean decode 76.6 tok/s; vram 11523 MiB
+product depth 16000: mean decode 72.6 tok/s; vram 11657 MiB
+product depth 32000: mean decode 68.8 tok/s; vram 11657 MiB
+product depth 48000: mean decode 66.4 tok/s; vram 11657 MiB
+product depth 60000: mean decode 61.7 tok/s; vram 11657 MiB
+product depth 120000: mean decode 19.5 tok/s; vram 11657 MiB
+product depth 180000: mean decode 11.4 tok/s; vram 11657 MiB
+product: survived the whole sequence (0 16000 32000 48000 60000 120000 180000)
+=== done 16:11

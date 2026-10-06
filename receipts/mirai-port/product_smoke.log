@@ -327,3 +327,323 @@ prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
 api    Authorization: Bearer <artifacts/api_key.txt>
 layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
 layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-05 19:07 engine f0c1cda47: inner health=1 vram=11443 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45824 in VRAM, 45824..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=8192  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-05 19:34 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-05 19:54 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-05 20:21 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-05 23:28 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 00:25 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 04:11 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 04:12 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 05:10 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 05:11 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 06:05 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 07:10 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=2  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 07:31 engine f0c1cda47: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f0c1cda47)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 10:31 engine a881e4277: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine a881e4277)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 10:54 engine a881e4277: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine a881e4277)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 11:28 engine a881e4277: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine a881e4277)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 14:00 engine 78c6a2ac7: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine 78c6a2ac7)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 14:20 engine f11c75618: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 14:34 engine f11c75618: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 14:39 engine f11c75618: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 14:42 engine f11c75618: inner health=1 vram=11459 MiB
+model  Qwen3.8-27B-S-mirai.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..45312 in VRAM, 45312..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 15:24 engine f11c75618: inner health=0 vram=26 MiB
+=== product smoke 2026-10-06 15:26 engine f11c75618: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1
+--- (1) inner identity vs stock dump:
+=== product smoke 2026-10-06 15:26 engine f11c75618: inner health=1 vram=11523 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1
+--- (1) inner identity vs stock dump:
+SAME  divergence at char   650 of 650/650 | ref 40.1 tok/s | 81.3 tok/s (200 tok) prefill 249 | 'Write a Pytho
+SAME  divergence at char   700 of 700/700 | ref 39.8 tok/s | 75.6 tok/s (131 tok) prefill 441 | 'Explain in fi
+SAME  divergence at char    79 of 79/79 | ref 40.1 tok/s | 87.3 tok/s (75 tok) prefill 455 | 'List the first 2
+SAME  divergence at char   114 of 114/114 | ref 39.7 tok/s | 69.0 tok/s (36 tok) prefill 462 | 'Translate to F
+SAME  divergence at char   640 of 640/640 | ref 39.9 tok/s | 82.9 tok/s (200 tok) prefill 475 | 'A train leave
+--- (2) layer round trip (sandboxed tool expected):
+SAME  divergence at char   650 of 650/650 | ref 40.1 tok/s | 82.0 tok/s (200 tok) prefill 452 | 'Write a Pytho
+SAME  divergence at char   700 of 700/700 | ref 39.8 tok/s | 75.6 tok/s (131 tok) prefill 443 | 'Explain in fi
+SAME  divergence at char    79 of 79/79 | ref 40.1 tok/s | 87.4 tok/s (75 tok) prefill 451 | 'List the first 2
+SAME  divergence at char   114 of 114/114 | ref 39.7 tok/s | 68.7 tok/s (36 tok) prefill 461 | 'Translate to F
+SAME  divergence at char   640 of 640/640 | ref 39.9 tok/s | 81.6 tok/s (200 tok) prefill 480 | 'A train leave
+--- (2) layer round trip (sandboxed tool expected):
+answer correct=True digits_claimed_ok=True usage={'prompt_tokens': 1229, 'completion_tokens': 154, 'total_tokens': 1383} trace_rounds=1 tools=[None]
+content head: 7919²³ = **467108626879242247837558250316016629764976413200918337681851382770674047843466282257250959**  Digit count: **90**
+--- (3) inner decode by depth:
+answer correct=True digits_claimed_ok=True usage={'prompt_tokens': 1229, 'completion_tokens': 154, 'total_tokens': 1383} trace_rounds=1 tools=[None]
+content head: 7919²³ = **467108626879242247837558250316016629764976413200918337681851382770674047843466282257250959**  Digit count: **90**
+--- (3) inner decode by depth:
+depth 0: mean decode 76.5 tok/s
+depth 0: mean decode 76.4 tok/s
+depth 16000: mean decode 71.9 tok/s
+=== smoke done 15:27; the product serve is left running (layer :8080, llama-server 127.0.0.1:18080)
+depth 16000: mean decode 71.8 tok/s
+=== smoke done 15:27; the product serve is left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 15:34 engine f11c75618: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 15:58 engine f11c75618: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 16:14 engine f11c75618: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine f11c75618)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product smoke 2026-10-06 16:29 engine be00bbdc1: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine be00bbdc1)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1
+--- (1) inner identity vs stock dump:
+SAME  divergence at char   650 of 650/650 | ref 40.1 tok/s | 80.6 tok/s (200 tok) prefill 358 | 'Write a Pytho
+SAME  divergence at char   700 of 700/700 | ref 39.8 tok/s | 74.8 tok/s (131 tok) prefill 441 | 'Explain in fi
+SAME  divergence at char    79 of 79/79 | ref 40.1 tok/s | 86.6 tok/s (75 tok) prefill 437 | 'List the first 2
+SAME  divergence at char   114 of 114/114 | ref 39.7 tok/s | 68.5 tok/s (36 tok) prefill 460 | 'Translate to F
+SAME  divergence at char   640 of 640/640 | ref 39.9 tok/s | 82.1 tok/s (200 tok) prefill 476 | 'A train leave
+--- (2) layer round trip (sandboxed tool expected):
+answer correct=True digits_claimed_ok=True usage={'prompt_tokens': 1229, 'completion_tokens': 154, 'total_tokens': 1383} trace_rounds=1 tools=[None]
+content head: 7919²³ = **467108626879242247837558250316016629764976413200918337681851382770674047843466282257250959**  Digit count: **90**
+--- (3) inner decode by depth:
+depth 0: mean decode 75.7 tok/s
+depth 16000: mean decode 71.5 tok/s
+=== smoke done 16:30; the product serve is left running (layer :8080, llama-server 127.0.0.1:18080)
+=== product start 2026-10-06 16:30 engine be00bbdc1: inner health=1 vram=11487 MiB
+model  Qwen3.8-27B-S-mirai-mtpq4.gguf  (Mirai S, trellis 2.4b, on engine be00bbdc1)
+window 262144 / q8_0
+kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB)
+spec   mtp draft 2 (2 past the VRAM line), draft window 16384
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+prefill ubatch 1024  mask=packed 1-bit  planes=ffn  level chunk 128 MiB
+api    Authorization: Bearer <artifacts/api_key.txt>
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)

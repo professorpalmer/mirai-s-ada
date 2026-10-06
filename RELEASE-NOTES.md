@@ -43,7 +43,7 @@ mode). Not affiliated with either.
   16k with identical outputs, for ~590 MiB of VRAM; a mode, the MTP block stays the default (receipt:
   `receipts/mirai-port/dflash_probe.log`).
 
-## bundle-20261006c (same day, evening): launcher and tooling only, binaries unchanged (engine f11c75618)
+## bundle-20261006c (same day, evening)
 
 - **VRAM line 45,312 -> 57,856 positions** on this card at the same 800 MiB margin, from two measured levers
   (`receipts/mirai-port/mtp_q4_probe.log`, `docs/REPORT.md` 6e): one transient CUDA pool for the target and draft
@@ -57,4 +57,12 @@ mode). Not affiliated with either.
   development machine; `bench/lib.sh` now derives the repo root from its own location.
 - Not changed: K/V stays q8_0 (a q4_0 cache is a knob until its quality on this model is measured); the MTP block
   stays the default drafter (DFlash remains the `MIRAI_SPEC_TYPE=dflash` mode).
+- **The launcher supervises the server.** One 180k-token request ended llama-server with an assert-style fail-fast
+  once on the new defaults and did not reproduce in four replays (`docs/REPORT.md` 6e). An aborted server is now
+  restarted (`MIRAI_RESTARTS`, default 3 within ten minutes) and `MIRAI_STDERR_FILE` keeps its raw stderr so the
+  next assert leaves its text; `tooling\stop.ps1` stops it without a restart.
+- **Engine be00bbdc1**: alesha-pro's control-vector projection mode (`--cvec-mode project`, off unless passed; greedy
+  identity against the fork's dump re-checked here 5/5 without the flag) plus a bounds guard on its per-layer flag.
+- **Linux**: `start-server.sh` and the Ubuntu 22.04 / RTX 3090 check (build line, identity 5/5, decode by depth) from
+  alesha-pro's pull request; the layer on Linux is not wired.
 

@@ -114,3 +114,38 @@ margin 800 run 23 depth 16000: mean decode 70.3 tok/s; vram 11568 MiB
 margin 800 run 24 depth 32000: mean decode 67.7 tok/s; vram 11568 MiB
 margin 800 run 25 depth 4000: mean decode 70.6 tok/s; vram 11568 MiB
 --- margin 800 verdict: worst decode 67.2 tok/s, demotion=0, vram end 11568 MiB
+=== margin soak 2026-10-06 15:34 engine f11c75618; soak 6 min per margin
+--- margin 800: kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB); at load 11487 MiB
+margin 800 run 1 depth 4000: mean decode 72.8 tok/s; vram 11657 MiB
+margin 800 run 2 depth 16000: mean decode 71.9 tok/s; vram 11657 MiB
+margin 800 run 3 depth 32000: mean decode 68.1 tok/s; vram 11657 MiB
+margin 800 run 4 depth 4000: mean decode 72.2 tok/s; vram 11657 MiB
+margin 800 run 5 depth 16000: ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host; vram 26 MiB
+margin 800 run 6 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 26 MiB
+margin 800 run 7 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 26 MiB
+margin 800 run 8 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 26 MiB
+margin 800 run 9 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 163 MiB
+margin 800 run 10 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 8181 MiB
+margin 800 run 11 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 10151 MiB
+margin 800 run 12 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11487 MiB
+margin 800 run 13 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11525 MiB
+margin 800 run 14 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 15 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 16 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 17 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 18 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 19 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 20 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 21 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 22 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 23 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 24 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 25 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 26 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 27 depth 32000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 28 depth 4000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+margin 800 run 29 depth 16000: urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>; vram 11659 MiB
+--- margin 800 (15:34 run) CUT at 15:37 by the E24 probe's stop_server (waiter matched the wrong 'done' line); runs 1-27 clean at 4k/16k/32k (worst 66.x), no verdict; re-run on the final configuration
+=== margin soak 2026-10-06 16:30 engine be00bbdc1; soak 6 min per margin
+--- margin 800: kv     tiered: cells 0..57856 in VRAM, 57856..262144 in system RAM (VRAM margin 800 MiB); at load 11487 MiB
+margin 800 run 1 depth 4000: mean decode 71.9 tok/s; vram 11657 MiB

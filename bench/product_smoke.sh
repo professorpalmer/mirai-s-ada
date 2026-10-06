@@ -15,7 +15,7 @@ OUT="$ROOT/receipts/mirai-port/product_smoke.log"
 INNER="http://127.0.0.1:18080"; LAYER="http://127.0.0.1:8080"
 stop_server >/dev/null; sleep 3
 rm -f "$ROOT/logs/product.launcher.log"
-MIRAI_LOG_FILE="logs/product.log" powershell -NoProfile -Command "Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','$ROOT/start-server.ps1' -RedirectStandardOutput '$ROOT/logs/product.launcher.log'"
+MIRAI_LOG_FILE="logs/product.log" MIRAI_STDERR_FILE="logs/product.stderr" powershell -NoProfile -Command "Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','$ROOT/start-server.ps1' -RedirectStandardOutput '$ROOT/logs/product.launcher.log'"
 ok=0; for i in $(seq 1 140); do sleep 3; curl -s -m 3 "$INNER/health" 2>/dev/null | grep -q '"ok"' && { ok=1; break; }; done
 echo "=== product $([ $START_ONLY = 1 ] && echo start || echo smoke) $(date '+%F %H:%M') engine $(cd "$ROOT/engine" && git rev-parse --short HEAD): inner health=$ok vram=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader | head -1)" | tee -a "$OUT"
 cat "$ROOT/logs/product.launcher.log" | tee -a "$OUT"

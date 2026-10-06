@@ -1,0 +1,13 @@
+=== E24 deep crash probe 2026-10-06 15:37 engine f11c75618; cells 57856
+A health=1 vram_used=11487 MiB
+A depth 120000: mean decode 19.7 tok/s; vram 11659 MiB
+A depth 180000: mean decode 11.5 tok/s; vram 11659 MiB
+A: survived 120k and 180k
+A did not reproduce; running A once more
+A2 health=1 vram_used=11487 MiB
+A2 depth 120000: mean decode 19.6 tok/s; vram 11659 MiB
+A2 depth 180000: mean decode 11.5 tok/s; vram 11659 MiB
+A2: survived 120k and 180k
+=== product start 2026-10-06 15:58 engine f11c75618: inner health=1 vram=11487 MiB
+layer health=1; serve left running (layer :8080, llama-server 127.0.0.1:18080)
+=== done 15:58; product restored

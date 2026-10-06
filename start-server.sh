@@ -4,7 +4,7 @@
 # set MIRAI_KV_VRAM_CELLS for your card (44000 is the 12 GB headless number of this repo).
 #
 #   ./start-server.sh                 # 262k q8_0 tiered window, MTP drafting, port 8080
-#   MIRAI_CVEC=models/Qwen3.8-27B-S-mirai-refusal-direction.gguf ./start-server.sh     # abliterated (README)
+#   MIRAI_CVEC=models/<direction>.gguf ./start-server.sh                                 # a control vector, projected out (--cvec-mode project)
 #   MIRAI_MMPROJ=models/mmproj-Qwen3.8-27B-base-f16.gguf ./start-server.sh             # images, encoder on the CPU
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,7 +43,7 @@ if [ "$SPEC" != 0 ]; then
   args+=(--spec-type draft-mtp --spec-draft-n-max "$SPEC" --spec-draft-n-max-tail "$SPEC_DEEP"
          --spec-draft-window "$DRAFT_WINDOW" -ctkd q8_0 -ctvd q8_0)
 fi
-# the refusal direction, projected out of the residual stream at run time (needs --cvec-mode in the engine)
+# a control vector, projected out of the residual stream at run time (needs --cvec-mode in the engine)
 [ -n "${MIRAI_CVEC:-}" ] && args+=(--control-vector-scaled "$MIRAI_CVEC:${MIRAI_CVEC_SCALE:-1.0}" --cvec-mode project)
 # images: the base model's encoder on the CPU, so it takes no VRAM from the cache
 [ -n "${MIRAI_MMPROJ:-}" ] && args+=(--mmproj "$MIRAI_MMPROJ" --no-mmproj-offload -t "${MIRAI_THREADS:-$(nproc --all)}")
