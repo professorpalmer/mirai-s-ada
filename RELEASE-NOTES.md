@@ -65,4 +65,6 @@ mode). Not affiliated with either.
   identity against the fork's dump re-checked here 5/5 without the flag) plus a bounds guard on its per-layer flag.
 - **Linux**: `start-server.sh` and the Ubuntu 22.04 / RTX 3090 check (build line, identity 5/5, decode by depth) from
   alesha-pro's pull request; the layer on Linux is not wired.
+- **Removing refusals, optional**: alesha-pro's refusal-direction control vector and his measurements, in
+  `docs/CONTROL-VECTOR.md` with a short README pointer; off unless the file is passed, not measured on the suite here.
 

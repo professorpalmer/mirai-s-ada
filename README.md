@@ -108,6 +108,14 @@ at the default draft 2) plus ~480 MiB for the draft context once it shares the t
 there is worth 2.2x over no drafting. `MIRAI_SPEC=0` moves the line to ~80k positions at the cost of the 1.85x below
 it (`docs/REPORT.md`, sections 5b and 6e).
 
+## Removing refusals (optional, from alesha-pro)
+
+The model's author measured the refusal direction of the quantized model and published it as a 1.3 MB control vector
+next to the weights; the engine can project it out of the residual stream at run time (`--cvec-mode project`, his
+contribution). Two arguments on the `llama-server` line, or `MIRAI_CVEC=<file> ./start-server.sh` on Linux. His
+measurements, method and caveats, and what this repository has and has not checked with it, are in
+[`docs/CONTROL-VECTOR.md`](docs/CONTROL-VECTOR.md). Off unless you pass the file; not measured on the suite here.
+
 ## Known limits and issues
 
 - **12 GB is the floor.** 8.2 GB of weights stay resident; this model does not fit an 8 GB card, and the launcher
@@ -146,13 +154,13 @@ it (`docs/REPORT.md`, sections 5b and 6e).
 | --- | --- |
 | `engine/` | submodule: [`professorpalmer/llama.cpp-ada-mirai`](https://github.com/professorpalmer/llama.cpp-ada-mirai). PrismML's llama.cpp fork with the serving patches (tiered KV cache, draft window and tail, reasoning flags, batch-invariant kernels, op timing) and Mirai's codec ported on top (ggml types 90-93, CPU and CUDA kernels, rotation and scale tensors, split attention gate, graph hook), plus the prefill work done here (one-plane FFN prompt numerics, packed 1-bit KQ mask, level-decode chunking). |
 | `start-server.ps1` | the launcher: sizes the VRAM line from measured fixed costs, starts the layer in front of llama-server. |
-| `start-server.sh` | Linux (from alesha-pro): the raw server with the same flags; optional images (`MIRAI_MMPROJ`) and a control vector (`MIRAI_CVEC`, projected out of the residual stream). |
+| `start-server.sh` | Linux (from alesha-pro): the raw server with the same flags; optional images (`MIRAI_MMPROJ`) and the refusal-direction vector (`MIRAI_CVEC`, `docs/CONTROL-VECTOR.md`). |
 | `tooling/` | `build_engine.bat` (Ninja + pip CUDA 13, sm_89), `install_bin.ps1`, `serve.ps1` / `stop.ps1` (hidden test server, log and PID files). |
 | `layer/`, `suite/` | the layer and the long exact-work suite, from [`bonsai-ada-surgery`](https://github.com/professorpalmer/bonsai-ada-surgery) with the changes made here (`layer/ORIGIN.md`). |
 | `bench/` | the measurement scripts and every run's scoreboard and results (`ML1`..`ML2f`, `E18`..`E21`, HumanEval arms). |
 | `receipts/` | small text receipts cited by the docs: profiles, greedy dumps from the model's fork, probe logs; `ubuntu-3090/` is alesha-pro's Linux check (RTX 3090). |
 | `templates/bonsai-template.jinja` | the chat template used for every measurement (reasoning_effort, thinking on/off). |
-| `docs/REPORT.md`, `docs/PREFILL.md`, `docs/ROADMAP.md` | what was found, the prefill investigation, what is left. |
+| `docs/REPORT.md`, `docs/PREFILL.md`, `docs/ROADMAP.md`, `docs/CONTROL-VECTOR.md` | what was found, the prefill investigation, what is left, alesha-pro's run-time refusal removal. |
 
 ## Build from source
 
