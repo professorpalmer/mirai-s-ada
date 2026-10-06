@@ -15,10 +15,12 @@
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Bin = Join-Path $Root 'bin'
-$Model = if ($env:MIRAI_MODEL) { $env:MIRAI_MODEL } else { Join-Path $Root 'models\Qwen3.8-27B-S-mirai.gguf' }
+$Model = if ($env:MIRAI_MODEL) { $env:MIRAI_MODEL } elseif (Test-Path (Join-Path $Root 'models\Qwen3.8-27B-S-mirai-mtpq4.gguf')) { Join-Path $Root 'models\Qwen3.8-27B-S-mirai-mtpq4.gguf' } else { Join-Path $Root 'models\Qwen3.8-27B-S-mirai.gguf' }
+# models\Qwen3.8-27B-S-mirai-mtpq4.gguf = the published GGUF with its MTP draft block requantized Q8_0 -> Q4_0 by
+# tooling\requant_mtp.py (every other tensor byte-identical): ~200 MiB of VRAM back, outputs identical by construction
 if (-not [IO.Path]::IsPathRooted($Model)) { $Model = Join-Path $Root "models\$Model" }
 if (-not (Test-Path $Model)) { throw "model not found: $Model" }
-if ((Get-Item $Model).Length -lt 11100000000) { throw "incomplete GGUF: $Model" }
+if ((Get-Item $Model).Length -lt 10900000000) { throw "incomplete GGUF: $Model" }   # 11.17 GB published, 10.96 GB with the MTP block at Q4_0
 $Server = Join-Path $Bin 'llama-server.exe'
 if (-not (Test-Path $Server)) { throw "llama-server.exe missing in $Bin (tooling\build_engine.bat llama-server; tooling\install_bin.ps1)" }
 $Help = (& $Server --help 2>&1 | Out-String)
@@ -112,6 +114,10 @@ if ($Spec -gt 0) {
     }
 }
 $env:GGML_CUDA_BATCH_INVARIANT = '1'
+# One transient CUDA pool for the target and draft contexts, and a 256-token micro-batch for the draft context: 62 MiB
+# back on 10-05 (vram_split.log G4 vs G1), 188 MiB against the product flags (E23, mtp_q4_probe.log: 11,151 vs 11,339 at equal
+# cells), identity 3/3, decode and acceptance unchanged. MIRAI_SHARED_POOL=0 reverts.
+if ($env:MIRAI_SHARED_POOL -ne '0') { $env:GGML_CUDA_SHARED_POOL = '1'; if (-not $env:LLAMA_MTP_DRAFT_UBATCH) { $env:LLAMA_MTP_DRAFT_UBATCH = '256' } }
 
 # ---- Prefill numerics ----------------------------------------------------------------------------------------
 # One activation plane for the FFN matmuls of prompt-sized batches (384+ tokens): +18% prefill at KL 0.00028 against
@@ -160,7 +166,10 @@ if ($Tier) {
         # measured 2026-10-06 (dflash_probe.log, DF3 at 40,960 cells): 11,925 MiB at load = 1,360 K/V + 544 staging + 450 snapshots
         # + 44 micro-batch + 9,527 of weights (MTP block skipped) + drafter layers + contexts; the MTP serve is 8,884 on the same terms
         $DflashFixed = if ($env:MIRAI_DFLASH_FIXED_MIB) { [int]$env:MIRAI_DFLASH_FIXED_MIB } else { 9530 }
-        $FixedMiB = if ($env:MIRAI_FIXED_MIB) { [int]$env:MIRAI_FIXED_MIB } elseif ($Spec -gt 0 -and $SpecType -eq 'dflash') { $DflashFixed + 150 * $Depth + $UBatchMiB + $LevelsExtraMiB } elseif ($Spec -gt 0) { 8220 + 150 * $Depth + 664 + $UBatchMiB + $LevelsExtraMiB } else { 8220 + $UBatchMiB + $LevelsExtraMiB }
+        $PoolMiB = if ($env:MIRAI_SHARED_POOL -ne '0') { -188 } else { 0 }   # E23 (mtp_q4_probe.log): POOL 11,151 vs BASE 11,339 at 40,960 cells
+        # the mtpq4 file keeps 204 MiB less of weights resident (E23 POOLQ4 10,947): weights term 8,016 instead of 8,220
+        $WeightsMiB = if ((Split-Path $Model -Leaf) -ieq 'Qwen3.8-27B-S-mirai-mtpq4.gguf') { 8016 } else { 8220 }
+        $FixedMiB = if ($env:MIRAI_FIXED_MIB) { [int]$env:MIRAI_FIXED_MIB } elseif ($Spec -gt 0 -and $SpecType -eq 'dflash') { $DflashFixed + 150 * $Depth + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } elseif ($Spec -gt 0) { $WeightsMiB + 150 * $Depth + 664 + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } else { $WeightsMiB + $UBatchMiB + $LevelsExtraMiB + $PoolMiB }
         $Budget = ($FreeMiB - $Margin - $FixedMiB) * 1MB - $Ctx * $CellBytes / 16
         $TierCells = [int]([math]::Floor($Budget / ($CellBytes * 15 / 16) / 256) * 256)
     }

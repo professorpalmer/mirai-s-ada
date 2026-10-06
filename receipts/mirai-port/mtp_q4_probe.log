@@ -1,0 +1,21 @@
+=== E23 mtp q4 + pool 2026-10-06 15:07 engine f11c75618
+BASE health=1 vram_used=11339 MiB
+BASE vram at load: 11339 MiB
+BASE identity vs greedy dump: 3 of 3 identical
+BASE decode at 0: mean decode 77.0 tok/s
+BASE decode at 16000: mean decode 72.4 tok/s
+BASE acceptance: pooled acceptance : 78.2 % (1572 / 2009 drafted tokens)
+POOL health=1 vram_used=11151 MiB
+POOL vram at load: 11151 MiB
+POOL identity vs greedy dump: 3 of 3 identical
+POOL decode at 0: mean decode 77.0 tok/s
+POOL decode at 16000: mean decode 72.4 tok/s
+POOL acceptance: pooled acceptance : 78.4 % (1573 / 2007 drafted tokens)
+POOLQ4 health=1 vram_used=10947 MiB
+POOLQ4 vram at load: 10947 MiB
+POOLQ4 identity vs greedy dump: 3 of 3 identical
+POOLQ4 decode at 0: mean decode 77.9 tok/s
+POOLQ4 decode at 16000: mean decode 73.7 tok/s
+POOLQ4 acceptance: pooled acceptance : 77.7 % (1568 / 2019 drafted tokens)
+C:/Users/pwall/Projects/mirai-s-serve/logs/product_restore.log:=== product start 2026-10-06 15:24 engine f11c75618: inner health=0 vram=26 MiB
+=== done 15:24

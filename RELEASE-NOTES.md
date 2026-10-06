@@ -43,3 +43,18 @@ mode). Not affiliated with either.
   16k with identical outputs, for ~590 MiB of VRAM; a mode, the MTP block stays the default (receipt:
   `receipts/mirai-port/dflash_probe.log`).
 
+## bundle-20261006c (same day, evening): launcher and tooling only, binaries unchanged (engine f11c75618)
+
+- **VRAM line 45,312 -> 57,856 positions** on this card at the same 800 MiB margin, from two measured levers
+  (`receipts/mirai-port/mtp_q4_probe.log`, `docs/REPORT.md` 6e): one transient CUDA pool for the target and draft
+  contexts with a 256-token draft micro-batch (188 MiB; `MIRAI_SHARED_POOL=0` reverts), and `tooling/requant_mtp.py`,
+  which writes a copy of the GGUF with only the MTP draft block at Q4_0 (204 MiB; the launcher prefers the copy when
+  it is in `models\`). Greedy identity 3/3 in every arm and 5/5 on the restarted product, decode unchanged
+  (76.5 / 71.9 tok/s at 0 / 16k), acceptance 77.7% vs 78.2%. Decode by depth on the new line: 76.6 / 72.6 / 61.7 / 19.5 / 11.4 tok/s at
+  0 / 16k / 60k / 120k / 180k (68.8 at 32k, 66.4 at 48k); 60k was 40.3 when it sat past the line.
+- The launcher accepts the 10.96 GB copy (its size guard was set for the 11.17 GB published file).
+- Housekeeping found while packaging: the sandbox canary and the FFN-gate driver carried absolute paths from the
+  development machine; `bench/lib.sh` now derives the repo root from its own location.
+- Not changed: K/V stays q8_0 (a q4_0 cache is a knob until its quality on this model is measured); the MTP block
+  stays the default drafter (DFlash remains the `MIRAI_SPEC_TYPE=dflash` mode).
+

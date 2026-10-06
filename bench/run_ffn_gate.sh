@@ -9,10 +9,11 @@ GGML_MIRAI_PREFILL_PLANES=ffn bash "$ROOT/bench/product_smoke.sh" --start-only >
 grep -E "inner health|layer health" "$ROOT/logs/product_ffn.log" | tee -a "$LOG"
 PYTHONUTF8=1 python "$ROOT/suite/run_suite.py" --base http://127.0.0.1:18080 --key-file "$ROOT/artifacts/api_key.txt" --model mirai-s-27b \
     --plan "$ROOT/bench/plans/computation.json" --out "$ROOT/bench/ML3-ffn-computation" --label-a mirai-raw-ffn 2>&1 | tail -12 | tee -a "$LOG"
-PYTHONUTF8=1 python - <<'PY' | tee -a "$LOG"
-import json
-ml2 = {(r['name'], r['seed']): r['ok'] for r in map(json.loads, open(r'C:\Users\pwall\Projects\mirai-s-serve\bench\ML2\results.jsonl', encoding='utf-8')) if r['family'] == 'computation' and r['arm'] == 'mirai-raw'}
-ffn = {(r['name'], r['seed']): r['ok'] for r in map(json.loads, open(r'C:\Users\pwall\Projects\mirai-s-serve\bench\ML3-ffn-computation\results.jsonl', encoding='utf-8'))}
+PYTHONUTF8=1 python - "$ROOT" <<'PY' | tee -a "$LOG"
+import json, sys
+ROOT = sys.argv[1]
+ml2 = {(r['name'], r['seed']): r['ok'] for r in map(json.loads, open(ROOT + '/bench/ML2/results.jsonl', encoding='utf-8')) if r['family'] == 'computation' and r['arm'] == 'mirai-raw'}
+ffn = {(r['name'], r['seed']): r['ok'] for r in map(json.loads, open(ROOT + '/bench/ML3-ffn-computation/results.jsonl', encoding='utf-8'))}
 print("item            ML2 raw (two planes)   ffn one-plane")
 lost = gained = 0
 for k in sorted(ml2):

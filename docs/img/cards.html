@@ -37,10 +37,10 @@ function card(eyebrow,title,sub,rows,opts){
 var cards={
   speed:function(){card('Mirai S 27B · RTX 4070 12 GB · same weights','The full 262k window and drafting at every depth, on the same 12 GB card',
     'Greedy outputs are token-identical to the reference fork in every arm; what changed is the cache, the drafting and the prompt path.',[
-    ['context window at q8_0 KV',64,262,262,'64k (11.0 GB)','262,144  (tiered: 45k in VRAM, rest in pinned RAM)'],
-    ['decode tok/s at 16k',38.1,71.4,80,'38.1','71.4  (MTP draft from the GGUF’s own block)'],
-    ['decode tok/s at 60k',33.5,40.3,80,'33.5 (window ends at 64k)','40.3  (past the VRAM line, host tail over PCIe)'],
-    ['decode tok/s at 120k / 180k',0,16.6,80,'window ends at 64k','16.6 / 10.3  (the window keeps going)'],
+    ['context window at q8_0 KV',64,262,262,'64k (11.0 GB)','262,144  (tiered: 58k in VRAM, rest in pinned RAM)'],
+    ['decode tok/s at 16k',38.1,71.9,80,'38.1','71.9  (MTP draft from the GGUF’s own block)'],
+    ['decode tok/s at 60k',33.5,61.7,80,'33.5 (window ends at 64k)','61.7  (inside the VRAM line: 58k positions)'],
+    ['decode tok/s at 120k / 180k',0,19.5,80,'window ends at 64k','19.5 / 11.4  (past the line: host tail over PCIe, the window keeps going)'],
     ['prefill tok/s, 16.8k prompt',1000,1090,1200,'~1,000','1,090  (one-plane FFN prompt path, KL 0.00028)'],
     ['apps that send effort "high"',0,1,1,'template error','answered  (harness-proofing)'],
   ],{R:420});},
@@ -57,7 +57,7 @@ var cards={
 cards.agentic=function(){card('Mirai S 27B · RTX 4070 12 GB · agents, tools and API clients','Built so the agent loop finishes',
     'Every row is a failure mode an agent hits in practice, measured before and after on the same weights and card.',[
     ['agent transcript that outgrows the window',64,262,262,'64k, then the context is gone','262,144 tokens, q8_0, same card'],
-    ['decode speed deep in a long session (60k)',33.5,40.3,80,'33.5 tok/s, window ends at 64k','40.3 tok/s and the session continues to 262k'],
+    ['decode speed deep in a long session (60k)',33.5,61.7,80,'33.5 tok/s, window ends at 64k','61.7 tok/s and the session continues to 262k'],
     ['apps that send effort "high" (Cline, Kilo, Open WebUI)',0,1,1,'template error on every request','answered, normalized to medium'],
     ['apps with a 256-4096 token cap, thinking on',0,1,1,'cut off mid-think','cap raised to the thinking budget'],
     ['runs lost to thinking until the cap (raw suite)',13,18,37,'13 of 37','18 of 37  (20k budget + forced close)'],

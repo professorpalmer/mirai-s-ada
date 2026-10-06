@@ -1,6 +1,6 @@
 # Shared helpers for the bash bench drivers. Servers start hidden with logs under logs\ (tooling\serve.ps1) and
 # stop with tooling\stop.ps1; nothing leaves a console window behind.
-ROOT="C:/Users/pwall/Projects/mirai-s-serve"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && (pwd -W 2>/dev/null || pwd))"   # the repo, Windows-style path under Git Bash
 PORT="${MIRAI_PORT:-18081}"
 BASE="http://127.0.0.1:$PORT"
 mkdir -p "$ROOT/artifacts" "$ROOT/logs"

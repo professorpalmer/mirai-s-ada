@@ -166,12 +166,73 @@ ML2d-low (meant as the "low" run) was a medium replay because the launcher's har
 word; it reproduced ML2b on 54 of 54 runs and is kept as that receipt. Lesson applied: a runner flag the server can
 normalize is checked against the server's own setting before a run.
 
+## 6e. 10-06: the prefill ceiling, DFlash drafting, and two free VRAM levers (E22, E23)
+
+**Where prefill stops on this card** (`docs/PREFILL.md`, DECISIONS 2026-10-05 18:30 / 18:45, 20:30). With the one-plane
+FFN prompt numerics, the packed mask and the 128 MiB level chunk, the 16.8k prompt prefills at 1,090 tok/s. The per-op
+table says where the time goes: trellis level decode 51%, GDN 11%, flash attention 11%, the activation quantizer 9%.
+The int8 GEMM itself runs at 191-233 TOPS against the card's 233 dense peak, so a two-stream pipeline that decodes the
+next chunk's levels behind the current GEMM (`GGML_MIRAI_PIPELINE=1`) measured 0 to -2.5%: there is no idle tensor time
+to hide work in. The 2048 micro-batch is +5.6% prefill (1,148) for 567 MiB of activation buffers (~16k positions), kept
+as a mode (`MIRAI_UBATCH=2048`). What is left is a few percent each (the quantizer's 127-register kernel, the decode
+write path); the ceiling for these weights on this card is ~1.1k tok/s.
+
+**E22, DFlash drafting** (`receipts/mirai-port/dflash_probe.log`; test server at the product flags, 40,960 cells, greedy
+identity against the no-draft dump). ggml-org's DFlash drafter for Qwen3.8-27B borrows the target's output head, which on
+Mirai is a trellis tensor; the graph hook had to learn to find the codec's tensors through the target model (engine
+f11c75618), without which every drafter arm aborted at load.
+
+| arm | identity | tok/s at 0 / 16k | pooled acceptance (mean draft) | VRAM at load |
+| --- | --- | ---: | ---: | ---: |
+| MTP block, draft 2 (default) | 3/3 | 76.2 / 71.8 | 78% (2.5) | 11,339 |
+| DFlash Q4_0, draft 3 (three runs agree within 1%) | 3/3 | 86.3 / 77.9 | 70% (3.0) | 11,925 |
+| DFlash draft 2 | 3/3 | 73.0 / 69.7 | 78% (2.6) | 11,919 |
+| DFlash draft 4 / 5 | 3/3 | 84.6 / 57.1 and 77.9 / 55.2 | 61% / 54% | 11,931 / 11,935 |
+| DFlash Q8_0 drafter, draft 5 | 3/3 | 43.1 / 35.2 | 55% | 11,941 |
+| DFlash draft 7 | did not load (VRAM) | | | |
+
+Draft 3 is the knee: +13% at depth 0 and +8.5% at 16k with identical outputs. Longer drafts lose acceptance faster
+than they add tokens, and each unit of draft depth adds a 150 MiB recurrent-state snapshot, which is why draft 4+
+collapse at 16k and draft 7 does not load. Placing the drafter's layers on the GPU (`-ngld 99`) and the 16k draft window
+changed nothing: the drafter is small, its file's bulk is embeddings and a head the loader never uses. The cost is 586
+MiB at equal cells, ~17k fewer positions on the VRAM line. Pre-declared gate (1.10x at 16k, or equal speed with more
+positions): missed at 1.085x. Shipped as `MIRAI_SPEC_TYPE=dflash` for sessions that stay under the smaller line; the
+MTP block stays the default for agents.
+
+**E23, two free VRAM levers** (`receipts/mirai-port/mtp_q4_probe.log`; same harness):
+
+| arm | VRAM at load | identity | tok/s at 0 / 16k | pooled acceptance |
+| --- | ---: | --- | ---: | ---: |
+| BASE: published file, pool off | 11,339 | 3/3 | 77.0 / 72.4 | 78.2% |
+| POOL: `GGML_CUDA_SHARED_POOL=1`, draft micro-batch 256 | 11,151 (-188) | 3/3 | 77.0 / 72.4 | 78.4% |
+| POOLQ4: POOL + the MTP block at Q4_0 (`tooling/requant_mtp.py`) | 10,947 (-392) | 3/3 | 77.9 / 73.7 | 77.7% |
+
+The requantized copy rewrites the GGUF by hand (its trellis tensor types are private to this fork and unknown to
+`gguf-py`): the 8 tensors of `blk.64.*` go Q8_0 -> Q4_0, everything else is copied byte for byte, 212 MB smaller.
+Speculation is exact, so the model's outputs cannot change and did not (3/3 in every arm); the draft's acceptance moved
+by half a point. Both levers are now defaults: the launcher credits 188 MiB for the pool and uses the 8,016 MiB weight
+term when the Q4 copy is present. The product restarted at 57,856 positions in VRAM (from 45,312) at the same 800 MiB
+margin, 11,487 MiB at load (the previous product start: 11,459), identity 5/5 against the fork's dump, the layer's tool
+round correct, 76.5 / 71.9 tok/s at 0 / 16k (`product_smoke.log` 15:26). Decode by depth on the new line
+(`decode_by_depth.log`): 76.6 / 72.6 / 68.8 / 66.4 / 61.7 / 19.5 / 11.4 tok/s at 0 / 16k / 32k /
+48k / 60k / 120k / 180k; 60k is inside the line now (40.3 before), past it the PCIe tail is unchanged. The 800 MiB
+margin soak on the new line is in `margin_soak.log` (same day).
+
+Not changed, by decision: the K/V cache stays q8_0. A q4_0 cache would double the positions in VRAM; the earlier
+KL-by-position receipt on this stack (1 flipped top token in 48 at depth for q4_0 against 1 in 160 for q8_0) is not
+a measurement on this model, so q4_0 is a knob until it is.
+
 ## 7. Open
 
-1. MTP prefill collapse (section 4).
-2. Tiered KV on Mirai: VRAM line, decode by depth, identity (section 5).
-3. Product recipe on this engine: reasoning budget and harness flags measured on Mirai (they were tuned on the stack's previous model),
-   then the suite re-paired on this engine (ML1 was the reference fork) and AppWorld raw.
-4. Beyond serving: the MTP block's acceptance rate on Mirai (on the stack's previous model an on-policy head gave
-   +4.3 pp); KV precision at depth (KL by position, as done before on this stack); whether any of the model's own translation
-   layers (trellis decode kernels, the head's aux path) leave speed on the table at batch 1 and at prefill width.
+1. Decode past ~58k positions is PCIe-bound (section 5b). The honest levers left are a 16 GB card (~180k positions by
+   the launcher's arithmetic, not measured), `MIRAI_SPEC=0` for ~80k positions without drafting, or a q4_0 cache once
+   its quality on this model is measured (KL by position and the suite, not before).
+2. Prefill is at the card's int8 ceiling (section 6e); the quantizer kernel and the decode write path are worth a few
+   percent each.
+3. Quality beyond the suite: AIME, MMLU-Pro and AppWorld have not been run on this serve. The suite's library-heavy
+   coding items remain model-limited (MIME passes only raw at effort "low").
+4. Model-side: the MTP block's acceptance (78% at draft 2; DFlash 70% at draft 3). An on-policy draft head trained on
+   this model's own outputs is the one lever that would move decode below the line; it is the model author's call.
+5. Whether any of the model's own translation layers (trellis decode kernels, the head's aux path) leave speed on the
+   table at batch 1: the op table says the level decode is half of prefill, and it is already at the tensor peak when
+   it feeds the GEMM.

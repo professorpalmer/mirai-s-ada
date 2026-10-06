@@ -1,5 +1,11 @@
 # Leftovers on this card, and what would prove each one
 
+Status 2026-10-06 evening: items 1 (the pool and the draft micro-batch are defaults since E23, 188 MiB; the MTP
+block's Q4_0 copy adds 204 MiB; the tail draft is 2), 2 (800 MiB headless adopted after the soaks), 3 (HumanEval
+grid: medium or low 158, thinking off 154; "low" recommended for raw coding agents) and 4 (acceptance measured: 78% at
+draft 2, DFlash 70% at draft 3; no on-policy head exists for this model) are closed in `docs/REPORT.md`. Items 5, 6
+and 7 stand; item 5 is now the gate for ever shipping a q4_0 cache.
+
 The stance: every number in `README.md` is a record, not a ceiling. Each item below names the translation layer it
 lives in, the expected gain, and the paired measurement that gates it. Nothing ships on expectation.
 Ordered by expected value per hour on the RTX 4070 12 GB. Updated 2026-10-04 23:00.

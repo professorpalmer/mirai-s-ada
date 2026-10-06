@@ -11,8 +11,8 @@ measurements here are what a 12 GB card adds around them.
 
 | RTX 4070 12 GB, served, one slot | alesha-pro's reference fork (`llama.cpp-mirai-s`, the starting point) | this serve |
 | --- | ---: | ---: |
-| context window with q8_0 KV | 64k (11.0 GB) | **262,144** (tiered: 44k positions in VRAM, the rest in pinned RAM) |
-| decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **75.8 / 71.4 / 40.3 / 16.6 / 10.3** |
+| context window with q8_0 KV | 64k (11.0 GB) | **262,144** (tiered: ~58k positions in VRAM, the rest in pinned RAM) |
+| decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **76.6 / 72.6 / 61.7 / 19.5 / 11.4** (60k is inside the VRAM line since 10-06 evening; 40.3 before) |
 | prefill, 16.8k-token prompt | ~1,000 | **1,090** (2048 micro-batch mode: 1,148) |
 | speculative decoding | none | MTP draft at every depth, outputs identical to drafting off |
 | HumanEval 164, greedy, tests executed in a sandbox | | **158** at medium or at effort "low"; 154 thinking off |
@@ -20,7 +20,7 @@ measurements here are what a 12 GB card adds around them.
 | apps that send `effort: "high"` | template error on every request | answered (normalized to medium) |
 
 Receipts for every row are in `receipts/mirai-port/` and `bench/`; how each number was obtained, and what did not
-work, is in `docs/REPORT.md` and `docs/PREFILL.md`. Numbers are from 2026-10-05/06, GDDR6X at stock clocks, display on
+work, is in `docs/REPORT.md` and `docs/PREFILL.md`. Numbers are from 2026-10-05/06 (decode by depth: 10-06 evening, `receipts/mirai-port/decode_by_depth.log`), GDDR6X at stock clocks, display on
 the CPU's integrated GPU (see "Getting more positions into VRAM").
 
 ![Built so the agent loop finishes: window, depth, effort words, output caps, forced close, API check, sandboxed Python, effort low](docs/img/agentic.png)
@@ -31,6 +31,15 @@ the CPU's integrated GPU (see "Getting more positions into VRAM").
    or build it (below). The binaries carry sm_89 machine code (RTX 40) and need only the NVIDIA driver.
 2. Put `Qwen3.8-27B-S-mirai.gguf` from [alesha-pro on Hugging Face](https://huggingface.co/alesha-pro/Qwen3.8-27B-S-mirai-GGUF)
    in `models\`. The MTP draft block ships inside that file; nothing is grafted.
+   Optional, two minutes on the CPU (needs `numpy` and the `engine` submodule, or `pip install gguf`):
+
+   ```powershell
+   python tooling\requant_mtp.py models\Qwen3.8-27B-S-mirai.gguf models\Qwen3.8-27B-S-mirai-mtpq4.gguf
+   ```
+
+   writes a copy with only the MTP draft block requantized Q8_0 -> Q4_0 (every other tensor byte-identical). The
+   launcher prefers that copy when it is present: 204 MiB more K/V in VRAM (~6k positions), outputs identical by
+   construction (speculation is exact), draft acceptance 77.7% vs 78.2% (`receipts/mirai-port/mtp_q4_probe.log`).
 3. Optional, once: `layer\fetch_runtime.ps1` downloads the sandbox runtime (CPython 3.12 on WASI, checksummed) and runs
    its isolation canaries. Without it the plain server starts.
 4. Serve:
@@ -41,8 +50,8 @@ the CPU's integrated GPU (see "Getting more positions into VRAM").
 
    OpenAI-compatible API on `http://<host>:8080/v1`, bearer key in `artifacts\api_key.txt` (created on first run).
    The launcher reads free VRAM, keeps a safety margin below the point where Windows demotes a background process's
-   memory, and puts as many positions of the 262k cache in VRAM as fit (about 44k headless on this card). It prints
-   the line it chose.
+   memory, and puts as many positions of the 262k cache in VRAM as fit (57,856 headless on this card with the
+   Q4 draft-block copy, ~51k with the published file). It prints the line it chose.
 
 ![Speed: the full 262k window and drafting at every depth on the same card](docs/img/speed.png)
 ![Quality: the same model answers more, with the layer and the right settings](docs/img/quality.png)
@@ -57,7 +66,7 @@ the CPU's integrated GPU (see "Getting more positions into VRAM").
 - **Sessions that stay under ~28k tokens and want the fastest decode**: `MIRAI_SPEC_TYPE=dflash` with the Q4_0
   DFlash drafter from `ggml-org/Qwen3.8-27B-GGUF` in `models\`. Measured (E22, three runs): 86 / 78 tok/s at 0 / 16k
   against 76 / 72 with the MTP block, greedy outputs identical, acceptance 70% at draft 3; drafts of 4 or more lose.
-  It costs ~17k of the 45k positions in VRAM, which is why the default keeps the MTP block for long agent sessions.
+  It costs ~17k of the ~58k positions in VRAM, which is why the default keeps the MTP block for long agent sessions.
 - **Tool-heavy agents that want speed over depth**: `chat_template_kwargs: {"enable_thinking": false}` per request
   (HumanEval 154/164 at 0.19x the tokens).
 
@@ -79,8 +88,9 @@ the CPU's integrated GPU (see "Getting more positions into VRAM").
 | `MIRAI_PREFILL_PLANES` | ffn | prompt-token numerics: `ffn` (one int8 plane for the FFN matmuls, +18% prefill, KL 0.00028), `2` exact, `1` one plane everywhere |
 | `MIRAI_KQ_MASK_PACKED` / `MIRAI_UBATCH` | 1 / 1024 | 1-bit attention mask; micro-batch (2048 = +5.6% prefill for ~570 MiB of VRAM) |
 | `MIRAI_LEVELS_MIB` | 128 | level-decode chunk footprint for long prompts |
+| `MIRAI_SHARED_POOL` | 1 | one transient CUDA pool for the target and draft contexts, 256-token draft micro-batch: 188 MiB of VRAM back (~5.7k positions), outputs, decode and acceptance unchanged (E23); 0 reverts |
 | `MIRAI_LAYER` | 1 | 0 = no layer |
-| `MIRAI_PORT`, `MIRAI_MODEL`, `MIRAI_LOG_FILE` | 8080, auto, none | |
+| `MIRAI_PORT`, `MIRAI_MODEL`, `MIRAI_LOG_FILE` | 8080, auto, none | model: `models\Qwen3.8-27B-S-mirai-mtpq4.gguf` when present, else the published file |
 
 ### Getting more positions into VRAM
 
@@ -88,19 +98,26 @@ Every GB of VRAM the desktop does not use is ~30k more q8_0 positions at full sp
 integrated graphics and set GPU-accelerated apps to it in Windows **Settings > System > Display > Graphics**; the
 launcher's margin drops from 1300 to 800 MiB headless.
 
-### Why the VRAM line is ~44k and not more
+### Why the VRAM line is ~58k and not more
 
-Mirai keeps 8,220 MiB of weights resident; drafting keeps one 150 MiB snapshot of the recurrent state per unit of
-rollback depth (two at the default draft 2) plus ~660 MiB for the draft context. Past the line every step reads the
-host tail over PCIe; drafting there is worth 2.2x over no drafting. `MIRAI_SPEC=0` moves the line to ~70k positions
-at the cost of the 1.85x below it (`docs/REPORT.md`).
+Mirai keeps 8,016 MiB of weights resident (8,220 with the published file: its MTP draft block at Q8_0 is 204 MiB
+more than the Q4_0 copy); drafting keeps one 150 MiB snapshot of the recurrent state per unit of rollback depth (two
+at the default draft 2) plus ~480 MiB for the draft context once it shares the transient pool. Each q8_0 position is
+34,816 bytes, so every 100 MiB is ~3k positions. Past the line every step reads the host tail over PCIe; drafting
+there is worth 2.2x over no drafting. `MIRAI_SPEC=0` moves the line to ~80k positions at the cost of the 1.85x below
+it (`docs/REPORT.md`, sections 5b and 6e).
 
 ## Known limits and issues
 
 - **12 GB is the floor.** 8.2 GB of weights stay resident; this model does not fit an 8 GB card, and the launcher
   does not try.
-- **Past the VRAM line decode is PCIe-bound** (45k positions on a 12 GB card with the display on the iGPU; see the
-  decode table). A 16 GB card moves the line to ~175k by the launcher's arithmetic; not measured here.
+- **Past the VRAM line decode is PCIe-bound** (~58k positions on a 12 GB card with the display on the iGPU; see the
+  decode table). A 16 GB card moves the line to ~180k by the launcher's arithmetic; not measured here.
+- **Prefill sits at the card's int8 ceiling.** The trellis level decode plus the int8 GEMM run at 191-233 TOPS of the
+  233 dense peak; ~1.1k tok/s on a 16.8k prompt is what this card does with these weights, and overlapping the level
+  decode behind the GEMM measured 0 to -2.5% (`docs/PREFILL.md`). The remaining levers are each a few percent.
+- **K/V stays q8_0.** A q4_0 cache (`MIRAI_CTK=q4_0`) would put about twice the positions in VRAM; its quality cost
+  on this model is not measured here, so it is a knob, not a default.
 - **Host RAM**: the full 262k cache keeps ~7 GB of K/V in pinned system RAM; the box needs that much free.
 - **One slot** (`-np 1`), as the reference fork also requires for this model.
 - **Windows launcher.** The Linux command line above is the same recipe, untested here.
