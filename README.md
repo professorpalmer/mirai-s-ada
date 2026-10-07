@@ -102,18 +102,22 @@ RTX 3090, the CUDA 12.8 toolkit, gcc 11.4 and cmake 3.22 (`receipts/ubuntu-3090/
 
 ```bash
 git clone --recurse-submodules https://github.com/professorpalmer/mirai-s-ada && cd mirai-s-ada
-cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DLLAMA_CURL=OFF \
-  -DCUDAToolkit_ROOT=/usr/local/cuda -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=86
+cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DLLAMA_CURL=OFF -DCMAKE_CUDA_ARCHITECTURES=native
 cmake --build build -j --target llama-server            # approximately 4 min on 32 threads
 hf download alesha-pro/Qwen3.8-27B-S-mirai-GGUF --local-dir models
 MIRAI_KV_VRAM_CELLS=44000 ./start-server.sh             # raw server on http://127.0.0.1:8080/v1
 ```
 
-- Set both CUDA paths to a CUDA 12 or 13 toolkit. On the test computer, an older system `nvcc` was first on the
-  PATH. Without the compiler path, the configure step failed.
+- CMake finds the CUDA toolkit by itself. If the configure step finds an old `nvcc` or fails, add the paths of a
+  CUDA 12 or 13 toolkit: `-DCUDAToolkit_ROOT=/usr/local/cuda -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc`. On the
+  Ubuntu test computer, an older system `nvcc` was first on the PATH, and the configure step needed these paths.
 - With a system cuBLAS 11, the int8 GEMM of the prompt path uses a tile that is approximately half as fast.
-- Set `CMAKE_CUDA_ARCHITECTURES` to your GPU generation: 86 for RTX 30, 89 for RTX 40. Without it, an older cmake
-  builds the kernels for all generations. That build took 17 minutes on the test computer.
+- `CMAKE_CUDA_ARCHITECTURES=native` compiles for the GPU in the computer. It needs cmake 3.24 or later and a GPU
+  that the driver can see when you configure. With an older cmake, use the number for your GPU: 75 for RTX 20, 86
+  for RTX 30, 89 for RTX 40, 120 for RTX 50. Without a value, an older cmake compiles the kernels for all
+  generations. That build took 17 minutes on the test computer.
+- The name "ada" comes from the RTX 4070 (Ada) where we measured the engine. The engine also runs on RTX 20, 30
+  and 50 cards. Proposed by Gotoro (issue #3), checked on Arch Linux with cmake 4.4.4.
 - As a last check, a fresh clone of this branch was built with these steps and served through `start-server.sh`.
 
 `start-server.sh` starts only the raw server. It uses the same flags and environment as `start-server.ps1`. It does
