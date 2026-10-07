@@ -70,3 +70,15 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
 - **Removing refusals, optional**: alesha-pro's refusal-direction control vector and his measurements, in
   `docs/CONTROL-VECTOR.md` with a short README pointer; off unless the file is passed, not measured on the suite here.
 
+
+## bundle-20261007 (fixes from the first user reports on the sister Bonsai serve)
+
+- **Engine `9b28b6057`**: a JSON schema with an empty `anyOf` / `oneOf` / `type` list no longer fails the request with
+  "failed to parse grammar"; the empty keyword is dropped and the rest of the schema converted (reported by Milor123
+  against the Bonsai serve, which shares this code). Upstream llama.cpp rejects such schemas with a clear error since
+  its September rewrite; the fork this engine is built on has not synced it yet.
+- **Layer**: a response cut by the token limit is no longer run as a sandbox tool call (it is handed back with
+  `finish_reason: length`); the "run the program on the example" sentence is only added when the layer's own sandbox
+  is the coding tool, not for agents that bring their own tools.
+- **Launcher**: warns when the GPU is already busy before the server starts. An app working on the card (found with
+  KDE Connect) time-slices the GPU and costs MTP drafting about a third of its speed even when it uses no VRAM.
