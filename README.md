@@ -1,13 +1,15 @@
 # Mirai S 27B on a 12 GB card: the full 262k window, drafting at every depth, and the layer
 
-[Mirai S](https://huggingface.co/alesha-pro/Qwen3.8-27B-S-mirai-GGUF) (Qwen3.8-27B-S, trellis codes, ~2.4 bits of
-information per weight, 11.17 GB) served on an **RTX 4070 12 GB** with the **full 262,144-token trained window at q8_0
+[Mirai S](https://huggingface.co/alesha-pro/Qwen3.8-27B-S-mirai-GGUF) (Qwen3.8-27B-S: [Mirai Labs](https://trymirai.com)'
+trellis-coded Qwen3.8-27B, ~2.4 bits of information per weight, converted to GGUF with its own ggml codec and
+llama.cpp fork by alesha-pro; 11.17 GB) served on an **RTX 4070 12 GB** with the **full 262,144-token trained window at q8_0
 KV cache**, MTP speculative decoding from the GGUF's own draft block at every depth, harness-proofing for the apps
 that send `effort: "high"` or tiny output caps, and an optional server-side layer (exact API cards, an API check, a
 sandboxed Python tool). Same weights as published; every kernel checked greedy token-for-token against the model's
-own llama.cpp fork before anything else was measured. This is a serving layer on top of alesha-pro's work, not a
-replacement for it: the codec, the model and the reference fork are theirs; the cache, drafting, server flags and
-measurements here are what a 12 GB card adds around them.
+own llama.cpp fork before anything else was measured. This is a serving layer on top of two other people's work, not
+a replacement for either: the model and its quantization are Mirai Labs'; the GGUF, the ggml codec kernels and the
+reference fork this was checked against are alesha-pro's; the cache, drafting, server flags and measurements here
+are what a 12 GB card adds around them.
 
 | RTX 4070 12 GB, served, one slot | alesha-pro's reference fork (`llama.cpp-mirai-s`, the starting point) | this serve |
 | --- | ---: | ---: |
@@ -239,13 +241,16 @@ python bench\determinism_probe.py                             # same request and
 - The engine (`engine/`): llama.cpp is MIT (the ggml authors); PrismML's fork and alesha-pro's fork are MIT; their
   notices are preserved in the engine tree. The Mirai codec kernels are alesha-pro's work, ported with attribution in
   the commit history and `engine/README.md`.
-- The model weights are not redistributed here. `Qwen3.8-27B-S-mirai-GGUF` is published by alesha-pro under the
+- The model weights are not redistributed here. The model is Mirai Labs' `Qwen3.8-27B-S` (trymirai), a quantization
+  of Alibaba's Qwen3.8-27B; `Qwen3.8-27B-S-mirai-GGUF` is alesha-pro's community conversion of it, published under the
   license on its Hugging Face card (Qwen3.8 itself is Apache 2.0); download it from there and keep its notices.
-- Nothing here is affiliated with, endorsed by or sponsored by alesha-pro, PrismML or Alibaba's Qwen team.
+- Nothing here is affiliated with, endorsed by or sponsored by Mirai Labs, alesha-pro, PrismML or Alibaba's Qwen team.
 
 ## Credits
 
-alesha-pro for the model, its codec and the llama.cpp fork it ships with, and for the refusal vector, the projection
+Mirai Labs for the model: Qwen3.8-27B-S and its trellis quantization. alesha-pro for the GGUF conversion, the ggml
+codec and kernels, the llama.cpp fork it ships with (the version this serve was built from and checked against), and
+for the refusal vector, the projection
 mode and the Linux check. PrismML for the llama.cpp fork the engine
 is built on. sudoingX for the planar activation layout and batch-invariant mode in that fork. MIT for everything here;
-the weights are their authors'. Not affiliated with alesha-pro or PrismML.
+the weights are their authors'. Not affiliated with Mirai Labs, alesha-pro or PrismML.

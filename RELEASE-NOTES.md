@@ -1,6 +1,7 @@
 # mirai-s-ada, first release (bundle-20261006)
 
-Mirai S 27B (alesha-pro's Qwen3.8-27B-S trellis GGUF, 11.17 GB) served on an RTX 4070 12 GB with:
+Mirai S 27B (Mirai Labs' Qwen3.8-27B-S trellis quantization, in alesha-pro's GGUF conversion with his ggml codec,
+11.17 GB) served on an RTX 4070 12 GB with:
 
 - the model's **full 262,144-token window at q8_0 KV** (tiered cache: ~44k positions in VRAM, the rest in pinned
   system RAM, bit-identical to an all-VRAM cache; the model's own fork fits 64k at q8_0 on the same card),
@@ -32,7 +33,8 @@ Binaries: sm_89 (RTX 40), CUDA 13 runtime included, NVIDIA driver only. Engine: 
 (PrismML's llama.cpp fork + the serving patches, also open as PrismML PRs #319-#323, + the Mirai codec ported from
 alesha-pro/llama.cpp-mirai-s and verified greedy token-for-token against it).
 
-Credits: alesha-pro (model, codec, fork), PrismML (the llama.cpp fork), sudoingX (planar activations, batch-invariant
+Credits: Mirai Labs (the model and its quantization), alesha-pro (GGUF conversion, codec, fork), PrismML (the llama.cpp
+fork), sudoingX (planar activations, batch-invariant
 mode). Not affiliated with either.
 
 ## bundle-20261006b (same day)

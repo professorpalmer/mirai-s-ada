@@ -5,7 +5,8 @@ Running notes, newest at the bottom. Method: paired runs, frozen plans and gates
 
 ## 1. The model
 
-`alesha-pro/Qwen3.8-27B-S-mirai-GGUF` (sha256 5aa4365c...), 11.17 GB. Qwen3.8-27B-S weights in four trellis-coded
+`alesha-pro/Qwen3.8-27B-S-mirai-GGUF` (sha256 5aa4365c...), 11.17 GB: alesha-pro's GGUF conversion of Mirai Labs'
+`Qwen3.8-27B-S` (trymirai; a trellis quantization of Alibaba's Qwen3.8-27B). Its weights are in four trellis-coded
 ggml types (`MS_V4T8`, `MS_V2T4`, `MS_V2T6`, `MS_I3`, ids 90-93 in the engine), about 2.4 bits of information per
 weight; model-wide rotation tensors (`mirai.rot.*`), a head auxiliary tensor (`mirai.head_aux`), a split attention
 gate, and the MTP draft block (`blk.64`) in Q8_0 inside the same file.

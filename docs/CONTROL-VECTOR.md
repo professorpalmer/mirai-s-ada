@@ -1,6 +1,7 @@
 # Removing refusals at run time: alesha-pro's control vector (optional, off by default)
 
-Written by [alesha-pro](https://github.com/alesha-pro), the author of the model, its codec and the reference fork,
+Written by [alesha-pro](https://github.com/alesha-pro), the author of the GGUF conversion, its ggml codec and the
+reference fork this serve was built from (the model itself is Mirai Labs' Qwen3.8-27B-S),
 and contributed in [pull request #1](https://github.com/professorpalmer/mirai-s-ada/pull/1) together with the
 engine's projection mode (`--cvec-mode project`,
 [llama.cpp-ada-mirai#1](https://github.com/professorpalmer/llama.cpp-ada-mirai/pull/1)). The measurements below are
