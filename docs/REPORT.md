@@ -243,7 +243,7 @@ a measurement on this model, so q4_0 is a knob until it is.
 3. Quality beyond the suite: AIME, MMLU-Pro and AppWorld have not been run on this serve. The suite's library-heavy
    coding items remain model-limited (MIME passes only raw at effort "low").
 4. Model-side: the MTP block's acceptance (78% at draft 2; DFlash 70% at draft 3). An on-policy draft head trained on
-   this model's own outputs is the one lever that would move decode below the line; it is the model author's call.
-5. Whether any of the model's own translation layers (trellis decode kernels, the head's aux path) leave speed on the
+   this model's own outputs is the one lever that would move decode below the line; that is a change to the model (Mirai Labs' checkpoint, alesha-pro's GGUF), not to this serve.
+5. Whether any of the codec's kernels as ported (trellis decode, the head's aux path) leave speed on the
    table at batch 1: the op table says the level decode is half of prefill, and it is already at the tensor peak when
    it feeds the GEMM.

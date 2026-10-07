@@ -15,13 +15,13 @@ h1{margin:0;font-family:var(--display);font-size:42px;line-height:1.08;font-weig
 .chart{flex:1;min-height:0;display:flex;align-items:center} .chart svg{width:100%;height:100%}
 svg text{font-family:var(--mono);font-size:14px;fill:var(--muted)} svg .cat{font-family:var(--body);font-size:17px;fill:var(--ink)} svg .lbl{fill:var(--ink);font-size:15px;font-weight:500}
 .foot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
-.foot b{color:var(--ink);font-weight:500}
+.foot b{color:var(--ink);font-weight:500;white-space:nowrap}
 </style>
 <div class="card" id="card"></div>
 <script>
 var NS='http://www.w3.org/2000/svg';
 function el(t,a,txt){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!==undefined)e.textContent=txt;return e;}
-var FOOT='<div class="foot"><span>RTX 4070 12 GB · Mirai S 27B (Mirai Labs; GGUF + codec by alesha-pro) · q8_0 KV · 2026-10-06 · receipts in the repo</span><span><b>github.com/professorpalmer/mirai-s-ada</b></span></div>';
+var FOOT='<div class="foot"><span>Mirai S 27B by Mirai Labs, on Qwen3.8-27B · GGUF + llama.cpp port by alesha-pro</span><span><b>github.com/professorpalmer/mirai-s-ada</b></span></div>';
 function card(eyebrow,title,sub,rows,opts){
   // rows: [label, refVal, ourVal, max, refText, ourText]
   var W=1088,L=(opts&&opts.L)||330,R=(opts&&opts.R)||170,rowH=(opts&&opts.rowH)||62,barH=18,H=rows.length*rowH+6;

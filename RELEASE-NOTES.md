@@ -1,10 +1,10 @@
 # mirai-s-ada, first release (bundle-20261006)
 
-Mirai S 27B (Mirai Labs' Qwen3.8-27B-S trellis quantization, in alesha-pro's GGUF conversion with his ggml codec,
+Mirai S 27B (Mirai Labs' Qwen3.8-27B-S, Qwen3.8-27B in their Mirai S trellis codec, in alesha-pro's GGUF conversion and llama.cpp port,
 11.17 GB) served on an RTX 4070 12 GB with:
 
 - the model's **full 262,144-token window at q8_0 KV** (tiered cache: ~44k positions in VRAM, the rest in pinned
-  system RAM, bit-identical to an all-VRAM cache; the model's own fork fits 64k at q8_0 on the same card),
+  system RAM, bit-identical to an all-VRAM cache; alesha-pro's reference fork fits 64k at q8_0 on the same card),
 - **MTP speculative decoding from the GGUF's own draft block at every depth** (outputs identical to drafting off):
   75.8 / 71.4 / 40.3 / 16.6 / 10.3 tok/s at 0 / 16k / 60k / 120k / 180k of context (the fork: 40 / 38 / 33.5 at 0 / 16k / 60k),
 - **prefill 1,090 tok/s on a 16.8k-token prompt** (one int8 activation plane for the FFN matmuls of prompt tokens at
@@ -30,12 +30,12 @@ the card's tensor peak), a round-countdown note for tool loops (read and ignored
 
 Install: unzip `mirai-s-bundle-win-x64.zip` into the repo, put the GGUF in `models\`, run `start-server.ps1`.
 Binaries: sm_89 (RTX 40), CUDA 13 runtime included, NVIDIA driver only. Engine: `professorpalmer/llama.cpp-ada-mirai`
-(PrismML's llama.cpp fork + the serving patches, also open as PrismML PRs #319-#323, + the Mirai codec ported from
+(PrismML's llama.cpp fork + the serving patches, also open as PrismML PRs #319-#323, + Mirai Labs' codec as alesha-pro ported it to ggml in
 alesha-pro/llama.cpp-mirai-s and verified greedy token-for-token against it).
 
-Credits: Mirai Labs (the model and its quantization), alesha-pro (GGUF conversion, codec, fork), PrismML (the llama.cpp
-fork), sudoingX (planar activations, batch-invariant
-mode). Not affiliated with either.
+Credits: Mirai Labs (the model, its quantization and the Mirai S codec), Qwen (the base model, Qwen3.8-27B), alesha-pro
+(GGUF conversion, the llama.cpp port of the codec, the reference fork), PrismML (the llama.cpp fork), sudoingX (planar
+activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of them.
 
 ## bundle-20261006b (same day)
 
