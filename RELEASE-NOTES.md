@@ -78,7 +78,7 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
   against the Bonsai serve, which shares this code). Upstream llama.cpp rejects such schemas with a clear error since
   its September rewrite; the fork this engine is built on has not synced it yet.
 - **Layer**: a response cut by the token limit is no longer run as a sandbox tool call (it is handed back with
-  `finish_reason: length`); the "run the program on the example" sentence is only added when the layer's own sandbox
-  is the coding tool, not for agents that bring their own tools.
+  `finish_reason: length`); the "run the program on the example" sentence is only added when the request asks for
+  code, so agents that offer run tools on every turn no longer get it on turns without a program.
 - **Launcher**: warns when the GPU is already busy before the server starts. An app working on the card (found with
   KDE Connect) time-slices the GPU and costs MTP drafting about a third of its speed even when it uses no VRAM.
