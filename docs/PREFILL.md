@@ -1,7 +1,7 @@
 # Prefill on Mirai S: where the time goes, what the card allows, and the plan
 
 Status 2026-10-05 morning. Product prefill is ~750-790 tok/s at the shipped batch (`-b 2048 -ub 512`), 933 at
-`-ub 1024` without drafting; the model's own fork does ~1,000 at 64k. A 100k-token prompt is two minutes
+`-ub 1024` without drafting; alesha-pro's reference fork does ~1,000 at 64k. A 100k-token prompt is two minutes
 before the first token. That is not a long-context product, so this is the next engineering line.
 
 ## 1. Measured: where a healthy prefill spends its GPU time
