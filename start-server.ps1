@@ -109,11 +109,20 @@ if ($Spec -gt 0) {
     # MIRAI_LOOKUP: a lookup drafter (for example ngram-mod) in front of the model drafter. It drafts text that is
     # already in the context; the model drafter drafts when it finds no match. MIRAI_SPEC_ARGS: extra drafter flags,
     # space-separated (for example "--spec-lookup-n-max 32").
-    $Lookup = if ($env:MIRAI_LOOKUP) { "$($env:MIRAI_LOOKUP)," } else { '' }
+    # Default (MTP drafter, engine with --spec-lookup-n-max): ngram-mod in front, lookup limit 32. Measured on Mirai S
+    # (receipts/lookup_ab_mirai.jsonl in the notebook, same text in every arm): file rewrites 86.5 -> 265.6 tok/s, edit
+    # calls 85.1 -> 103.8, plain text unchanged. MIRAI_LOOKUP=0 turns it off; not tested with the DFlash drafter.
+    $LookupN = if ($env:MIRAI_LOOKUP_N) { [int]$env:MIRAI_LOOKUP_N } else { 32 }
+    $LookupDefault = ($Help -match '--spec-lookup-n-max') -and $SpecType -ne 'dflash' -and $LookupN -gt 0
+    $LookupName = if ($env:MIRAI_LOOKUP -eq '0') { '' } elseif ($env:MIRAI_LOOKUP) { $env:MIRAI_LOOKUP } elseif ($LookupDefault) { 'ngram-mod' } else { '' }
+    $Lookup = if ($LookupName) { "$LookupName," } else { '' }
     if ($SpecType -eq 'dflash') {
         $SpecArgs = @('--spec-type', "${Lookup}draft-dflash", '-md', $Drafter, '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
     } else {
         $SpecArgs = @('--spec-type', "${Lookup}draft-mtp", '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
+    }
+    if ($LookupName -and ($Help -match '--spec-lookup-n-max') -and -not ($env:MIRAI_SPEC_ARGS -match 'spec-lookup-n-max')) {
+        $SpecArgs += @('--spec-lookup-n-max', "$LookupN")
     }
     if ($env:MIRAI_SPEC_ARGS) { $SpecArgs += @($env:MIRAI_SPEC_ARGS -split '\s+' | Where-Object { $_ }) }
     if ($HasTier) {
@@ -196,7 +205,7 @@ Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
 if ($Spec -gt 0) {
-    Write-Host "spec   $SpecType draft $Spec$(if ($TierCells -gt 0) { " ($SpecDeep past the VRAM line)" })$(if ($HasTier -and $SpecType -ne 'dflash') { ", draft window $DraftWindow" }) (drafting on)"
+    Write-Host "spec   $SpecType draft $Spec$(if ($TierCells -gt 0) { " ($SpecDeep past the VRAM line)" })$(if ($HasTier -and $SpecType -ne 'dflash') { ", draft window $DraftWindow" }) (drafting on)$(if ($LookupName) { "; lookup $LookupName up to $LookupN (MIRAI_LOOKUP=0 turns it off)" })"
 } else {
     Write-Host "spec   draft 0: drafting is OFF because MIRAI_SPEC=$($env:MIRAI_SPEC) is set in this window. Decode is slower:"
     Write-Host "       draft 2 gives 1.85x decode at every depth of a 64k window (feature test A)."
