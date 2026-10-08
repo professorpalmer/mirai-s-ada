@@ -45,6 +45,7 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | context window with q8_0 KV | 64k (11.0 GB) | **262,144** (tiered: approximately 58k positions in VRAM, the remainder in pinned RAM) |
 | decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **76.6 / 72.6 / 61.7 / 19.5 / 11.4** (60k is inside the VRAM line since the evening of 10-06; before that, 40.3) |
 | prefill, 16.8k-token prompt | approximately 1,000 | **1,090** (2048 micro-batch mode: 1,148) |
+| decode when the answer copies the context (rewrite a 150-line file), tok/s, at 4k / 130k | - | **265.6 / 84.9** (lookup drafting in front of the MTP draft, since bundle-20261008; before: 86.5 / 20.1. New text: 75.7 / 17.3, the same as before. Same output) |
 | speculative decoding | none | MTP draft at every depth, outputs identical to drafting off |
 | HumanEval 164, greedy, tests run in a sandbox | | **158** at medium or at effort "low"; 154 with thinking off |
 | long exact-work suite, 37 tasks, raw / through the layer | 13 / 30 (on the reference fork) | **18 / 28** (12 rescues, 2 losses); coding family over two seed sets 7 / **12** of 24, at effort "low" 6 / 8 of 12 |
@@ -214,6 +215,8 @@ file. This project did not measure the vector on the suite.
 | `MIRAI_SPEC` / `MIRAI_SPEC_DEEP` | 2 / 2 (3 with dflash) | draft size, and draft size past the VRAM line |
 | `MIRAI_SPEC_TYPE` / `MIRAI_DRAFTER` | mtp / `models\dflash-Qwen3.8-27B-Q4_0.gguf` | `dflash` drafts with the DFlash drafter of ggml-org, not with the MTP block of the GGUF: +13% decode at depth 0, +8.5% at 16k, outputs identical, approximately 590 MiB more VRAM (approximately 17k fewer positions in VRAM). Download the drafter from `ggml-org/Qwen3.8-27B-GGUF` into `models\` |
 | `MIRAI_DRAFT_WINDOW` | 16384 | rows that the draft block keeps |
+| `MIRAI_LOOKUP` / `MIRAI_LOOKUP_N` | ngram-mod / 32 | lookup drafter in front of the draft block: it drafts text that is already in the context (file rewrites, edit calls, quoted logs), up to N tokens at a time; the draft block drafts when it finds no match. 0 = off. Not used with `dflash` |
+| `MIRAI_SPEC_ARGS` | none | more drafter flags, passed to the server as they are |
 | `MIRAI_EFFORT` / `MIRAI_EFFORT_ALLOWED` | medium / medium | default effort of the server; effort words that the template gets (the server changes other words to medium) |
 | `MIRAI_THINK` / `MIRAI_THINK_BUDGET` | 1 / 20480 | thinking on; tokens before a forced close |
 | `MIRAI_HARNESS_PROOF` | 1 | 0 = do not change effort words and output caps |
