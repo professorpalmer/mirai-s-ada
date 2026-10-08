@@ -13,6 +13,9 @@
 #   MIRAI_CTX=N            window (262144)                  MIRAI_KV_VRAM_CELLS pin the VRAM line
 #   MIRAI_VRAM_MARGIN=MiB  headroom (1000 headless / 1300 with the display on this card, from the Bonsai soaks)
 $ErrorActionPreference = 'Stop'
+# Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
+# common one) silently changes the server; the launcher prints them all at start.
+$UserEnv = @(Get-ChildItem Env: | Where-Object { $_.Name -match '^(MIRAI_|LLAMA_ARG_|LLAMA_MTP_|GGML_)' } | Sort-Object Name)
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Bin = Join-Path $Root 'bin'
 $Model = if ($env:MIRAI_MODEL) { $env:MIRAI_MODEL } elseif (Test-Path (Join-Path $Root 'models\Qwen3.8-27B-S-mirai-mtpq4.gguf')) { Join-Path $Root 'models\Qwen3.8-27B-S-mirai-mtpq4.gguf' } else { Join-Path $Root 'models\Qwen3.8-27B-S-mirai.gguf' }
@@ -187,7 +190,21 @@ if ($Tier) {
 Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine $(if (Test-Path (Join-Path $Root 'engine\.git')) { (git -C (Join-Path $Root 'engine') rev-parse --short HEAD) } else { '?' }))"
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
-Write-Host "spec   $SpecType draft $Spec$(if ($TierCells -gt 0 -and $Spec -gt 0) { " ($SpecDeep past the VRAM line)" })$(if ($HasTier -and $Spec -gt 0 -and $SpecType -ne 'dflash') { ", draft window $DraftWindow" })"
+if ($Spec -gt 0) {
+    Write-Host "spec   $SpecType draft $Spec$(if ($TierCells -gt 0) { " ($SpecDeep past the VRAM line)" })$(if ($HasTier -and $SpecType -ne 'dflash') { ", draft window $DraftWindow" }) (drafting on)"
+} else {
+    Write-Host "spec   draft 0: drafting is OFF because MIRAI_SPEC=$($env:MIRAI_SPEC) is set in this window. Decode is slower:"
+    Write-Host "       draft 2 gives 1.85x decode at every depth of a 64k window (feature test A)."
+    Write-Host "       To turn it on: Remove-Item Env:MIRAI_SPEC (or open a new window), then start again."
+}
+# the launcher sets these itself, and they stay in the window after a run: not the user's settings
+$Own = @('BONSAI_LAYER_KEY', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
+         'LLAMA_MTP_DRAFT_UBATCH', 'GGML_MIRAI_PREFILL_PLANES', 'GGML_MIRAI_LEVELS_MIB')
+$Listed = @($UserEnv | Where-Object { $_.Name -notin $Own -and $_.Value })
+if ($Listed.Count -gt 0) {
+    Write-Host ("env    set in this window, these change the defaults: " + (($Listed | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join '  '))
+    Write-Host "       A new PowerShell window starts without them. Remove-Item Env:NAME removes one."
+}
 Write-Host "listen 0.0.0.0:$Port  think=$Think effort=$Effort budget=$ThinkBudget  harness-proofing=$($HarnessArgs.Count -gt 0)  backend-sampling=$($BsArgs.Count -gt 0)"
 Write-Host "prefill ubatch $UBatch  mask=$(if ($Packed) { 'packed 1-bit' } else { 'f16' })  planes=$($env:GGML_MIRAI_PREFILL_PLANES)  level chunk $LevelsMiB MiB"
 Write-Host "api    Authorization: Bearer <artifacts/api_key.txt>"
@@ -245,7 +262,10 @@ try {
 } catch { }
 Set-Location $Bin
 # Everything after this line is the server's command line, as one array (printed into the stderr file for receipts).
-[string[]]$ServerArgs = @() + $TierArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + @(
+# The launcher sizes the GPU memory itself (the VRAM line). The engine's own automatic fit has nothing to adjust with
+# every layer set, and it only printed "failed to fit params to free device memory ... abort". Turn it off.
+[string[]]$FitArgs = if ($Help -match '--fit ') { @('--fit', 'off') } else { @() }
+[string[]]$ServerArgs = @() + $TierArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + $FitArgs + @(
     '--reasoning-budget', "$ThinkBudget",
     '-n', '24576',
     '-m', $Model,
