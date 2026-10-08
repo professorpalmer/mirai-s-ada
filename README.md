@@ -14,6 +14,13 @@ This serve adds these items:
 - **MTP speculative decoding at every depth**. The draft block is in the GGUF.
 - **Harness-proofing** for apps that send `effort: "high"` or very small output caps.
 - An optional **server-side layer**: exact API cards, an API check and a sandboxed Python tool.
+- **Lookup drafting** in front of the draft block (on by default): text that is already in the context is drafted up
+  to 32 tokens at a time. File rewrites are 3 to 4 times faster (130k: 20.1 -> 84.9 tok/s), new text is unchanged, and
+  so is the output.
+- **Prefill past the VRAM line without a fixed extra cost**: new K/V rows go to VRAM first and then to system RAM in
+  whole blocks. A 130k prompt: 509 -> 639 tok/s.
+- What we took from [syv-ai/HyperQwen](https://github.com/syv-ai/HyperQwen) and what we measured:
+  [`docs/HYPERQWEN.md`](docs/HYPERQWEN.md).
 
 The weights are the same as the published weights. Before all other measurements, this project checked each kernel
 against alesha-pro's reference fork, greedy and token for token. This repository does not replace the work of Mirai
