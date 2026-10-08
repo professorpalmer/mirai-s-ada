@@ -106,11 +106,16 @@ if ($SpecType -eq 'dflash' -and -not (Test-Path $Drafter)) { Write-Host "drafter
 [string[]]$SpecArgs = @()
 $DraftCells = 0
 if ($Spec -gt 0) {
+    # MIRAI_LOOKUP: a lookup drafter (for example ngram-mod) in front of the model drafter. It drafts text that is
+    # already in the context; the model drafter drafts when it finds no match. MIRAI_SPEC_ARGS: extra drafter flags,
+    # space-separated (for example "--spec-lookup-n-max 32").
+    $Lookup = if ($env:MIRAI_LOOKUP) { "$($env:MIRAI_LOOKUP)," } else { '' }
     if ($SpecType -eq 'dflash') {
-        $SpecArgs = @('--spec-type', 'draft-dflash', '-md', $Drafter, '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
+        $SpecArgs = @('--spec-type', "${Lookup}draft-dflash", '-md', $Drafter, '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
     } else {
-        $SpecArgs = @('--spec-type', 'draft-mtp', '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
+        $SpecArgs = @('--spec-type', "${Lookup}draft-mtp", '--spec-draft-n-max', "$Spec", '-ctkd', $Ctk, '-ctvd', $Ctk)
     }
+    if ($env:MIRAI_SPEC_ARGS) { $SpecArgs += @($env:MIRAI_SPEC_ARGS -split '\s+' | Where-Object { $_ }) }
     if ($HasTier) {
         if ($SpecType -ne 'dflash') { $SpecArgs += @('--spec-draft-window', "$DraftWindow") }
         $DraftCells = $DraftWindow + 2 * 2048 + 256
