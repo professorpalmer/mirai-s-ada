@@ -1,0 +1,13 @@
+15:50 arm base (<serve repo, engine 8381d3a45>; ): health=1
+{"tag": "i7f-mirai-base", "depth": 36000, "tools": 107, "arm": "server", "ask": 0, "tps": 40.4, "n": 1776, "evaluated": 62994, "acceptance": 0.708}
+{"tag": "i7f-mirai-base", "depth": 36000, "tools": 107, "arm": "server", "ask": 1, "tps": 36.7, "n": 1567, "evaluated": 1027, "acceptance": 0.575}
+{"tag": "i7f-mirai-base", "depth": 36000, "tools": 107, "arm": "greedy", "ask": 0, "tps": 48.4, "n": 1618, "evaluated": 1028, "acceptance": 0.739}
+{"tag": "i7f-mirai-base", "depth": 36000, "tools": 107, "arm": "greedy", "ask": 1, "tps": 38.4, "n": 1727, "evaluated": 1027, "acceptance": 0.655}
+{"tag": "i7f-mirai-base", "tools": 107, "calls": ["read", "read", "github_list_repository"], "finish": "tool_calls", "sha": "2509409c73b3", "tps": 59.6, "n": 193, "acceptance": 0.732}
+15:54 arm fix (<candidate root, engine 6f2d47e3e>; ): health=1
+{"tag": "i7f-mirai-fix", "depth": 36000, "tools": 107, "arm": "server", "ask": 0, "tps": 49.2, "n": 1776, "evaluated": 62994, "acceptance": 0.708}
+{"tag": "i7f-mirai-fix", "depth": 36000, "tools": 107, "arm": "server", "ask": 1, "tps": 45.0, "n": 1567, "evaluated": 1027, "acceptance": 0.575}
+{"tag": "i7f-mirai-fix", "depth": 36000, "tools": 107, "arm": "greedy", "ask": 0, "tps": 53.6, "n": 1618, "evaluated": 1028, "acceptance": 0.739}
+{"tag": "i7f-mirai-fix", "depth": 36000, "tools": 107, "arm": "greedy", "ask": 1, "tps": 46.9, "n": 1727, "evaluated": 1027, "acceptance": 0.655}
+{"tag": "i7f-mirai-fix", "tools": 107, "calls": ["read", "read", "github_list_repository"], "finish": "tool_calls", "sha": "2509409c73b3", "tps": 70.4, "n": 193, "acceptance": 0.732}
+15:58 === done

@@ -19,6 +19,9 @@ This serve adds these items:
   so is the output.
 - **Prefill past the VRAM line without a fixed extra cost**: new K/V rows go to VRAM first and then to system RAM in
   whole blocks. A 130k prompt: 509 -> 639 tok/s.
+- **Many tools cost no decode speed** (bundle-20261008c): the server copied the tool-call grammar with a slow
+  search on each draft step. 107 tools at 63k: 36.7 -> 45.0 tok/s on a plan-like answer, 59.6 -> 70.4 on a request
+  with three tool calls, same output.
 - What we took from [syv-ai/HyperQwen](https://github.com/syv-ai/HyperQwen) and what we measured:
   [`docs/HYPERQWEN.md`](docs/HYPERQWEN.md).
 

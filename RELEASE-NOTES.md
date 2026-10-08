@@ -111,6 +111,28 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261008c (agent requests with many tools)
+
+Same model file, launcher and layer. New engine binaries (engine commit `6f2d47e3e`; the change is in `llama.dll`).
+
+- **Many tools cost no decode speed.** With speculative decoding, the server copies the sampler on each draft step,
+  so that it can go back when the draft is rejected. With tools, the sampler holds the tool-call grammar. The grammar
+  copy found each stack entry with a search over every element of every grammar rule, so a long tool list (an agent
+  with several MCP servers) made each draft step slower. Now each entry is found with a binary search over the rule
+  start addresses. The copy is the same; only the search is faster. Requests without tools do not change.
+
+  | RTX 4070, Mirai S, 107 tools (106.7k characters of tool definitions), about 63k tokens | Before | Now |
+  | --- | ---: | ---: |
+  | Code-like answer, server-default sampling | 40.4 tok/s | 49.2 tok/s |
+  | Plan-like answer, server-default sampling | 36.7 tok/s | 45.0 tok/s |
+  | Code-like answer, greedy | 48.4 tok/s | 53.6 tok/s |
+  | Plan-like answer, greedy | 38.4 tok/s | 46.9 tok/s |
+  | A request with three tool calls (the grammar is active) | 59.6 tok/s | 70.4 tok/s |
+
+  Each pair has the same token count and the same draft acceptance, and the tool-call request gives the same calls
+  with the same hash (`receipts/tools_ab_mirai.log`). The same change is patch 0042 of the sister Bonsai serve, and it
+  is offered upstream as ggml-org/llama.cpp #30172.
+
 ## bundle-20261008b (prefill past the VRAM line)
 
 Same model file, launcher and layer. New engine binaries (engine commit `8381d3a45`; the change is in `ggml-cuda.dll`).
