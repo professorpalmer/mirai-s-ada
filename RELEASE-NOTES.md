@@ -82,3 +82,31 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
   code, so agents that offer run tools on every turn no longer get it on turns without a program.
 - **Launcher**: warns when the GPU is already busy before the server starts. An app working on the card (found with
   KDE Connect) time-slices the GPU and costs MTP drafting about a third of its speed even when it uses no VRAM.
+
+## bundle-20261008 (lookup drafting, keep-alive, clearer launcher messages)
+
+Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and layer.
+
+- **Lookup drafting, on by default.** A lookup drafter drafts text that is already in the context, up to 32 tokens
+  at a time, in front of the model's own draft block. When the answer copies the context (file rewrites, edit calls,
+  quoted logs), decode is much faster. On new text, the speed is the same. The output is the same in every arm we ran
+  (`receipts/lookup_ab_mirai.jsonl`):
+
+  | RTX 4070, tok/s | Before, 4k | Now, 4k | Before, 130k | Now, 130k |
+  | --- | ---: | ---: | ---: | ---: |
+  | Rewrite a 150-line file | 86.5 | 265.6 | 20.1 | 84.9 |
+  | One edit tool call | 85.1 | 103.8 | 19.8 | 24.9 |
+  | New text | 75.6 | 75.7 | 17.4 | 17.3 |
+
+  At 130k, most of the cache is in system RAM and each step costs more, so one long accepted draft saves more.
+
+  `MIRAI_LOOKUP=0` turns it off; `MIRAI_LOOKUP_N` sets the limit (32 is best for edit calls). Engine option:
+  `--spec-lookup-n-max N`, a separate draft limit for the lookup drafters, so the draft block keeps its own small
+  draft size. Idea credit: syv-ai/HyperQwen, which drafts out of the prompt for the same reason on vLLM.
+- **SSE keep-alive in the layer.** While the server sends nothing (a long prefill), the layer sends a `: keep-alive`
+  comment every 15 seconds, so proxies and tunnels do not close the stream. Clients ignore it.
+- **Launcher messages.** At start, the launcher lists every `MIRAI_*`, `LLAMA_ARG_*` and `GGML_*` variable that is set
+  in the window, and it says when drafting is off and why. It turns the engine's automatic fit off, because it sizes
+  the VRAM itself (the "failed to fit params" warning is gone).
+- **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
+  Gotoro).
