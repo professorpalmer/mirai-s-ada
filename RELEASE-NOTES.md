@@ -110,3 +110,31 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
   the VRAM itself (the "failed to fit params" warning is gone).
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
+
+## bundle-20261008b (prefill past the VRAM line)
+
+Same model file, launcher and layer. New engine binaries (engine commit `8381d3a45`; the change is in `ggml-cuda.dll`).
+
+- **Prefill past the VRAM line, without the fixed extra cost.** The first ~58k positions of the cache are in VRAM
+  (the display on the integrated GPU), and the rest are in system RAM. Before, prefill became slower at once when the
+  prompt passed that line: each prefill micro-batch wrote its new K/V rows to system RAM in small pieces over PCIe.
+  Now the rows are written to VRAM first and then copied to system RAM as whole 16-byte stores, and the system-RAM
+  rows of the next attention layer are copied on a second CUDA stream while the layers before it compute. Greedy
+  output does not change, and decode does not change.
+
+  | RTX 4070, Mirai S, prefill | Before | Now |
+  | --- | ---: | ---: |
+  | Cost per prompt token, prompt chunks past the line (58k to 130k) | 2.27-3.10 ms | 1.53-2.26 ms |
+  | One 100k prompt (cumulative) | 596 tok/s | 722 tok/s |
+  | One 130k prompt (cumulative; time to first token) | 509 tok/s (254 s) | 639 tok/s (202 s) |
+  | VRAM line pinned at 16k, one 40k prompt | 765 tok/s | 964 tok/s |
+
+  Decode at 130k: 18.4 and 18.5 tok/s. Greedy text: 7 of 7 prompts identical (`receipts/tier_ab_mirai.jsonl`;
+  the same patch is patch 0041 of the sister Bonsai serve).
+
+- **Each KV cache has its own staging buffers.** Before, the MTP draft context and the main context shared them, and
+  the draft context runs on its own CUDA stream. With the VRAM line pinned below the draft context's size (about
+  20.7k cells, `MIRAI_KV_VRAM_CELLS`), one context could overwrite the other's rows: at a 16k line, the old engine
+  gave broken text (answers of 2 to 17 tokens) on prompts of 30k. The automatic line is above that size.
+
+`GGML_CUDA_KV_TIER_REDIRECT=0` and `GGML_CUDA_KV_TIER_PREFETCH=0` turn the two parts off.
