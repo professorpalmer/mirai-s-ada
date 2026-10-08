@@ -45,6 +45,7 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | context window with q8_0 KV | 64k (11.0 GB) | **262,144** (tiered: approximately 58k positions in VRAM, the remainder in pinned RAM) |
 | decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **76.6 / 72.6 / 61.7 / 19.5 / 11.4** (60k is inside the VRAM line since the evening of 10-06; before that, 40.3) |
 | prefill, 16.8k-token prompt | approximately 1,000 | **1,090** (2048 micro-batch mode: 1,148) |
+| prefill, 130k-token prompt (cumulative) | - (64k window) | **639** (since bundle-20261008b; before: 509) |
 | decode when the answer copies the context (rewrite a 150-line file), tok/s, at 4k / 130k | - | **265.6 / 84.9** (lookup drafting in front of the MTP draft, since bundle-20261008; before: 86.5 / 20.1. New text: 75.7 / 17.3, the same as before. Same output) |
 | speculative decoding | none | MTP draft at every depth, outputs identical to drafting off |
 | HumanEval 164, greedy, tests run in a sandbox | | **158** at medium or at effort "low"; 154 with thinking off |
