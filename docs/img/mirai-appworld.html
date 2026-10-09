@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S on one 12 GB card: AppWorld</title>
+<!-- 1200x675 share card, dark. Rendered at 2x into docs/img/mirai-appworld.png. Numbers: docs/REPORT.md 6g-6i,
+     receipts/mirai-port/appworld.log, bench/humaneval/L0-layer-medium + L1-layer-ec-medium, receipts/mirai-port/ckpt_ab.log;
+     vLLM and BF16 rows: alesha-pro, qwen38-27b-bench-4x3090/agentic-v1. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root { --bg:#0E1512; --panel:#152019; --line:#223129; --ink:#F2F6F1; --muted:#9FB3A7; --dim:#5C6E64; --ref:#6B7A72; --mir:#F0A64A; --mir2:#F7C77E; --good:#3CDB8A;
+  --display:"IBM Plex Sans Condensed",Arial,sans-serif; --body:"IBM Plex Sans","Segoe UI",Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,monospace; }
+html,body{margin:0;width:1200px;height:675px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body);}
+.card{box-sizing:border-box;width:1200px;height:675px;padding:30px 56px 20px;display:flex;flex-direction:column;gap:8px;}
+.eyebrow{font-family:var(--mono);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+h1{margin:0;font-family:var(--display);font-size:46px;line-height:1.02;font-weight:700;}
+h1 i{color:var(--mir);font-style:normal;}
+.sub{margin:0;font-size:17px;color:var(--muted);}
+.grid{flex:1;display:grid;grid-template-columns:1.25fr 1fr;gap:22px;min-height:0;margin-top:6px;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:10px;}
+.panel h2{margin:0 0 2px;font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.row{display:grid;grid-template-columns:190px 1fr 74px;gap:12px;align-items:center;}
+.lab{font-size:15px;font-weight:600;line-height:1.15;}
+.lab small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);}
+.track{background:#1C2A22;border-radius:4px;height:22px;}
+.bar{height:22px;border-radius:4px;}
+.ref{background:var(--ref);} .us{background:linear-gradient(90deg,var(--mir),var(--mir2));}
+.num{font-family:var(--mono);font-size:20px;text-align:right;font-weight:600;}
+.num.us-n{color:var(--mir);}
+.sgc{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:-4px;padding-left:202px;}
+.note{font-size:13.5px;color:var(--muted);line-height:1.4;margin-top:auto;}
+.note b{color:var(--ink);font-weight:600;}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tile{background:#0F1A14;border:1px solid var(--line);border-radius:10px;padding:11px 13px;}
+.tile .t{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;}
+.tile .v{font-family:var(--display);font-size:32px;font-weight:700;line-height:1;margin-top:5px;}
+.tile .v .was{color:var(--ref);} .tile .v .arr{color:var(--dim);font-size:20px;padding:0 5px;} .tile .v .now{color:var(--mir);}
+.tile .d{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.3;}
+.tile .d b{color:var(--ink);font-weight:600;}
+.tile.wide{grid-column:1 / span 2;} .tile.wide .v{font-size:40px;}
+.foot{display:flex;justify-content:space-between;gap:16px;font-family:var(--mono);font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:8px;}
+.foot b{color:var(--muted);font-weight:500;}
+</style>
+<div class="card">
+  <div class="eyebrow">Mirai S 27B · 2.4 bits per weight · one RTX 4070 12 GB · 262k window · bundle-20261009</div>
+  <h1>AppWorld <i>88.7%</i> on one 12 GB card. Level with Mirai's own vLLM plugin on four RTX 3090s.</h1>
+  <p class="sub">All 168 test tasks, ReAct code agent, the model's own tool use. Same weights; a serve built for a gaming GPU.</p>
+  <div class="grid">
+    <div class="panel">
+      <h2>AppWorld test_normal · task goal completion, %</h2>
+      <div class="row"><div class="lab">BF16 reference<small>full precision · alesha-pro</small></div>
+        <div class="track"><div class="bar ref" style="width:95.8%"></div></div><div class="num">95.8</div></div>
+      <div class="sgc">scenario goal 91.1</div>
+      <div class="row"><div class="lab">Mirai S, vLLM plugin<small>4x RTX 3090 · alesha-pro</small></div>
+        <div class="track"><div class="bar ref" style="width:89.9%"></div></div><div class="num">89.9</div></div>
+      <div class="sgc">scenario goal 75.0</div>
+      <div class="row"><div class="lab">Mirai S, this serve<small>1x RTX 4070 12 GB</small></div>
+        <div class="track"><div class="bar us" style="width:88.7%"></div></div><div class="num us-n">88.7</div></div>
+      <div class="sgc">scenario goal 73.2 · by difficulty 100 / 87.5 / 79.4</div>
+      <div class="note"><b>1.2 points ≈ 2 of 168 tasks</b>, one seed each: the same result within noise, on one GPU
+        instead of four: 12 GB of VRAM instead of 96.</div>
+    </div>
+    <div class="panel">
+      <h2>Also in bundle-20261009</h2>
+      <div class="tiles">
+        <div class="tile wide"><div class="t">AGENT TURN AFTER AN EDITED TOOL RESULT · 32K CONTEXT</div><div class="v"><span class="was">36 s</span><span class="arr">→</span><span class="now">5 s</span></div>
+          <div class="d">checkpoints inside long messages, <b>on by default</b>: the server restores the nearest one instead of re-reading the whole prompt · same text</div></div>
+        <div class="tile"><div class="t">HUMANEVAL 164 · LAYER</div><div class="v"><span class="was">158</span><span class="arr">→</span><span class="now">160</span></div>
+          <div class="d">example check: the task's own examples run on the answer · 0 lost</div></div>
+        <div class="tile"><div class="t">WINDOW · DECODE</div><div class="v"><span class="now">262k</span></div>
+          <div class="d">q8_0 K/V · 76.6 tok/s at 0, 61.7 at 60k · file rewrites 265 tok/s</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>github.com/professorpalmer/mirai-s-ada/releases</b> · receipts in receipts/mirai-port/</span><span>model: Mirai Labs · GGUF + codec port: alesha-pro</span></div>
+</div>
