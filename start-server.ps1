@@ -49,8 +49,9 @@ if (-not (Test-Path $ApiKeyFile)) {
 $ApiKey = (Get-Content -Path $ApiKeyFile -Raw).Trim()
 
 # ---- Context and KV precision ------------------------------------------------------------------------
-# q8_0 K/V as on Bonsai (1 flipped top token in 160 at depth vs 1 in 48 for q4_0, measured there; the KL-by-position
-# sweep is still to be run on Mirai). Tiered KV (--kv-vram-cells N): cells [0, N) in VRAM, the rest in pinned system
+# q8_0 K/V. Measured on Mirai S (2026-10-09, wikitext, 16k chunks x 4, against f16 K/V; docs/REPORT.md 6f): q8_0
+# KL 0.00050, top token the same on 99.64%; q4_0 KL 0.0243, 97.10%, one token at KL 22.6, so MIRAI_CTK=q4_0 is not
+# recommended. Tiered KV (--kv-vram-cells N): cells [0, N) in VRAM, the rest in pinned system
 # RAM mapped into the same CUDA range, bit-identical output; past N a step reads the RAM tail over PCIe.
 $Tier = ($env:MIRAI_TIER -ne '0') -and $HasTier
 $Ctx = if ($env:MIRAI_CTX) { [int]$env:MIRAI_CTX } elseif ($Tier) { 262144 } else { 65536 }
@@ -204,6 +205,18 @@ if ($Tier) {
 Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine $(if (Test-Path (Join-Path $Root 'engine\.git')) { (git -C (Join-Path $Root 'engine') rev-parse --short HEAD) } else { '?' }))"
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
+if ($TierCells -gt 0 -and $FreeMiB) {
+    # The VRAM line is set from the free VRAM at start. Show it, so a low line has a visible cause (other programs that
+    # hold VRAM when the server starts move the line down; a user report had 2.3 GB held at one start).
+    $TotalMiB = [int]((& nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | Select-Object -First 1).Trim())
+    $OtherMiB = $TotalMiB - $FreeMiB
+    $CellsPerGiB = [int](1GB / ($CellBytes * 15 / 16) / 1000)
+    Write-Host "vram   $FreeMiB of $TotalMiB MiB free at start (other programs: $OtherMiB MiB); each GiB more free moves the line by about ${CellsPerGiB}k cells"
+    if ($OtherMiB -gt $(if ($Headless) { 768 } else { 2048 })) {
+        Write-Host "       Other programs hold much VRAM now (Task Manager > Performance > GPU > Dedicated GPU memory)."
+        Write-Host "       Close them, or wait until an old server has stopped, then start again for a higher VRAM line."
+    }
+}
 if ($Spec -gt 0) {
     Write-Host "spec   $SpecType draft $Spec$(if ($TierCells -gt 0) { " ($SpecDeep past the VRAM line)" })$(if ($HasTier -and $SpecType -ne 'dflash') { ", draft window $DraftWindow" }) (drafting on)$(if ($LookupName) { "; lookup $LookupName up to $LookupN (MIRAI_LOOKUP=0 turns it off)" })"
 } else {

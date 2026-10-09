@@ -1,0 +1,25 @@
+=== kv kl 2026-10-09 10:50 engine 8ebd8348d; wikitext 16k x 4
+--- base: f16 K/V, saving logits
+<repo>\engine\common\arg.cpp:4254: GGML_ASSERT(params.speculative.draft.n_gpu_layers < 0) failed
+--- K/V q8_0 against f16
+<repo>\engine\common\arg.cpp:4254: GGML_ASSERT(params.speculative.draft.n_gpu_layers < 0) failed
+--- K/V q4_0 against f16
+<repo>\engine\common\arg.cpp:4254: GGML_ASSERT(params.speculative.draft.n_gpu_layers < 0) failed
+=== done
+(the 10:50 run above: stale llama-perplexity from 2026-10-05 against the 8ebd8348d llama-common.dll -> assert; rebuilt, rerun below)
+=== kv kl 2026-10-09 10:53 engine 8ebd8348d; wikitext 16k x 4
+--- base: f16 K/V, saving logits
+1.48.106.254 I Final estimate: PPL = 7.7472 +/- 0.12340
+--- K/V q8_0 against f16
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+Mean ln(PPL(Q)/PPL(base))     :   0.002388 ±   0.000693
+Mean    KLD:   0.000497 ±   0.000090
+Maximum KLD:   1.462206
+Same top p: 99.640 ± 0.033 %
+--- K/V q4_0 against f16
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+Mean ln(PPL(Q)/PPL(base))     :   0.009027 ±   0.001809
+Mean    KLD:   0.024268 ±   0.002318
+Maximum KLD:  22.608280
+Same top p: 97.100 ± 0.093 %
+=== done

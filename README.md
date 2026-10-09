@@ -58,7 +58,7 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | prefill, 130k-token prompt (cumulative) | - (64k window) | **639** (since bundle-20261008b; before: 509) |
 | decode when the answer copies the context (rewrite a 150-line file), tok/s, at 4k / 130k | - | **265.6 / 84.9** (lookup drafting in front of the MTP draft, since bundle-20261008; before: 86.5 / 20.1. New text: 75.7 / 17.3, the same as before. Same output) |
 | speculative decoding | none | MTP draft at every depth, outputs identical to drafting off |
-| HumanEval 164, greedy, tests run in a sandbox | | **158** at medium or at effort "low"; 154 with thinking off |
+| HumanEval 164, greedy, tests run in a sandbox | | **158** at medium or at effort "low"; 154 with thinking off; **160** through the layer with the example check (since bundle-20261009) |
 | long exact-work suite, 37 tasks, raw / through the layer | 13 / 30 (on the reference fork) | **18 / 28** (12 rescues, 2 losses); coding family over two seed sets 7 / **12** of 24, at effort "low" 6 / 8 of 12 |
 | apps that send `effort: "high"` | template error on each request | answered (changed to medium) |
 

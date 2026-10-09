@@ -34,6 +34,7 @@ import sandbox_path  # noqa: E402,F401
 import sandbox  # noqa: E402
 import apicards_v2 as apicards  # noqa: E402  (E9b: v2 docstring cards adopted)
 import apilint  # noqa: E402
+import example_check  # noqa: E402
 
 TOOL_NAME = "run_python"
 TOOL = {"type": "function", "function": {
@@ -258,6 +259,8 @@ class Proxy(http.server.BaseHTTPRequestHandler):
     lint = True
     exec_timeout = 10.0
     api_key = None        # when set, chat requests are checked here before any work is done
+    example_check = True  # run the request's docstring examples on the answer; on failure one follow-up turn (HumanEval
+                          # through the layer, medium: 158 -> 160 of 164, 0 lost, +23% completion tokens; docs/REPORT.md 6h)
     finish_note = True    # default for "finish_note": run-on-the-example sentence for coding requests (E15: adopted)
     repair_note = False   # default for "repair_note": a fixed sentence on failing tool results (E14 pending)
     round_note = False    # default for "round_note": the E19 countdown from the 8th tool round (off until measured)
@@ -541,6 +544,10 @@ class Proxy(http.server.BaseHTTPRequestHandler):
         msgs = list(body["messages"])
         trace, usage_total = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         max_rounds = int(body.pop("interpreter_max_rounds", self.max_rounds) or self.max_rounds)   # E16 toggle
+        want_ec = body.pop("example_check", None)
+        ec_on = self.example_check if want_ec is None else bool(want_ec)
+        ec_task = example_check.task(user_text(msgs)) if ec_on else None
+        ec_done = False
         final_msg = FINAL_REASON if body.pop("final_mode", None) == "reason" else FINAL_NUDGE    # E16 toggle
         for rnd in range(max_rounds + 1):
             body["messages"] = msgs
@@ -561,6 +568,22 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             calls = m.get("tool_calls") or []
             ours = [c for c in calls if c["function"]["name"] == TOOL_NAME]
             truncated = resp["choices"][0].get("finish_reason") == "length"   # half-written calls: hand back, never run
+            if ec_task and not ec_done and not truncated and not calls:   # example check: the final answer, once
+                ec_done = True
+                code = example_check.answer_code(m.get("content") or "", ec_task[0])
+                if code:
+                    out = run_tool({"code": example_check.checker_program(code, ec_task[1], ec_task[2])}, self.exec_timeout)
+                    try:
+                        res = json.loads((out.get("stdout") or "").strip().splitlines()[-1])
+                    except Exception:
+                        res = {"error": "the code did not finish"} if out.get("timed_out") else {}
+                    hint = example_check.follow_up(res)
+                    info["example_check"] = {k: res.get(k) for k in ("n", "failed", "error")}
+                    info["example_check"]["follow_up"] = hint is not None
+                    if hint and rnd < max_rounds:
+                        msgs.append({"role": "assistant", "content": m.get("content") or ""})
+                        msgs.append({"role": "user", "content": hint})
+                        continue
             if truncated or not ours or len(ours) != len(calls):   # final answer, or a client tool call: hand back
                 if ours:                               # mixed: drop our calls, keep the client's
                     m["tool_calls"] = [c for c in calls if c["function"]["name"] != TOOL_NAME]
@@ -591,6 +614,7 @@ if __name__ == "__main__":
     ap.add_argument("--keepalive", type=float, default=15.0, help="seconds of server silence before an SSE comment (0 = off)")
     ap.add_argument("--no-cards", action="store_true")
     ap.add_argument("--no-lint", action="store_true")
+    ap.add_argument("--no-example-check", action="store_true", help="do not run a coding request's docstring examples on the answer")
     ap.add_argument("--no-finish-note", action="store_true", help="do not append the run-on-the-example sentence to coding requests")
     ap.add_argument("--repair-note", action="store_true", help="append a fixed sentence to failing tool results by default")
     ap.add_argument("--round-note", action="store_true", help="E19: append a round countdown to tool results from the 8th tool round")
@@ -604,6 +628,7 @@ if __name__ == "__main__":
     Proxy.repair_note = a.repair_note
     Proxy.round_note = a.round_note
     Proxy.finish_note = not a.no_finish_note
+    Proxy.example_check = not a.no_example_check
     srv = http.server.ThreadingHTTPServer((a.host, a.port), Proxy)
     print(f"bonsai layer on {a.host}:{a.port} -> {a.upstream}", flush=True)
     srv.serve_forever()

@@ -111,6 +111,27 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261009 (the example check, checkpoints inside long messages, the free-VRAM line)
+
+Same model file. New engine binaries (engine commit `75eaee882`), launcher and layer.
+
+- **Example check in the layer, on by default.** When a coding request has a function stub with docstring examples,
+  the layer runs the examples on the answer in the sandbox; if they fail, it sends one follow-up turn with the report.
+  HumanEval through the layer at medium: 158 -> **160** of 164, none lost, for +23% completion tokens.
+  `"example_check": false` per request or `--no-example-check` turns it off.
+- **Checkpoints inside long messages (option).** A prompt that changes inside one long message (an edited tool result,
+  a file sent again) was read again from the start. `LLAMA_ARG_CHECKPOINT_EVERY_NT=8192` keeps a checkpoint every
+  8,192 tokens inside a message too: at 32k, those requests took 4.5-6.6 s instead of 34.6-36.5 s, with the same text.
+  Off by default: each checkpoint takes ~150 MiB of system RAM (at most 32), and other requests are ~1 s slower.
+- **The launcher shows the free VRAM at start** (`vram` line) and gives a warning when other programs hold much of it.
+  The VRAM line is set from the free VRAM at start, so a low line now has a visible cause.
+- **Layer:** the run-on-the-example sentence is decided from the first user message only. Before, a later message with
+  a code block could add it to the first message in the middle of a conversation, so the server read the prompt again
+  from there.
+- **`llama-perplexity` fixed:** the copy in bundle-20261008d was older than its library and stopped at an assertion.
+- Measured, not changed: q4_0 K/V costs this model far more than q8_0 (top token flipped on 1 position in 34, single
+  tokens far off; docs/REPORT.md 6f), so K/V stays q8_0.
+
 ## bundle-20261008d (the shared CUDA pool, made safe)
 
 Same model file, launcher and layer. New engine binaries (engine commit `8ebd8348d`; the change is in `ggml-cuda.dll`).

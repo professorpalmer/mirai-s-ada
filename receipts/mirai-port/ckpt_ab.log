@@ -1,0 +1,15 @@
+12:17 arm n0 (depth 32000): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB)
+{"tag": "mirai-n0", "depth": 32000, "kind": "edit", "item": "csv.py", "tps": 112.5, "n": 237, "draft_n": 252, "draft_acc": 198, "sha": "34626552c9d9", "wall": 4.2}
+12:20 arm n0: peak_ws_mib=12420 private_mib=17815
+12:20 arm n8192 (depth 32000): health=1; 
+{"tag": "mirai-n8192", "depth": 32000, "kind": "edit", "item": "csv.py", "tps": 150.2, "n": 237, "draft_n": 298, "draft_acc": 219, "sha": "34626552c9d9", "wall": 3.7}
+12:21 arm n8192: peak_ws_mib=14408 private_mib=17817
+12:21 === done
+12:23 VOID: the run above did not stop the candidate root's n0 server (tooling/stop.ps1 only stops this repo's servers); the n8192 launcher then failed for VRAM and the n0 server answered. Stop fixed; rerun below.
+12:23 arm n0 (depth 32000): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB)
+{"tag": "mirai-n0", "depth": 32000, "kind": "edit", "item": "csv.py", "tps": 112.7, "n": 237, "draft_n": 252, "draft_acc": 198, "sha": "34626552c9d9", "wall": 4.2}
+12:26 arm n0: peak_ws_mib=12420 private_mib=17819
+12:26 arm n8192 (depth 32000): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB)
+{"tag": "mirai-n8192", "depth": 32000, "kind": "edit", "item": "csv.py", "tps": 112.7, "n": 237, "draft_n": 252, "draft_acc": 198, "sha": "34626552c9d9", "wall": 5.6}
+12:29 arm n8192: peak_ws_mib=13146 private_mib=18539
+12:29 === done

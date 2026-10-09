@@ -4,24 +4,37 @@ listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=Tru
 --- H0-medium-20k (medium, max_tokens 24576, no env) 18:33
 
 pass@1 96.34%  (158/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1642.9s
-wrote C:/Users/pwall/Projects/mirai-s-serve/bench/humaneval/H0-medium-20k\summary.json
+wrote <repo>/bench/humaneval/H0-medium-20k\summary.json
 server: product defaults; thinking off per request
 --- H3-off (off, max_tokens 4096, no env) 19:00
 
 pass@1 93.9%  (154/164)  arm=off effort=- temp=0.0 max_tokens=4096  377.2s
-wrote C:/Users/pwall/Projects/mirai-s-serve/bench/humaneval/H3-off\summary.json
+wrote <repo>/bench/humaneval/H3-off\summary.json
 server: MIRAI_THINK_BUDGET=8192
 listen 0.0.0.0:8080  think=True effort=medium budget=8192  harness-proofing=True  backend-sampling=True
 --- H1-medium-8k (medium, max_tokens 12288, no env) 19:07
 
 pass@1 96.34%  (158/164)  arm=medium effort=- temp=0.0 max_tokens=12288  1637.8s
-wrote C:/Users/pwall/Projects/mirai-s-serve/bench/humaneval/H1-medium-8k\summary.json
+wrote <repo>/bench/humaneval/H1-medium-8k\summary.json
 server: MIRAI_EFFORT_ALLOWED=low,medium (effort low sent per request)
 listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
 --- H2-low-20k (medium, max_tokens 24576, HE_KW_EFFORT=low) 19:34
 
 pass@1 96.34%  (158/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1178.8s
-wrote C:/Users/pwall/Projects/mirai-s-serve/bench/humaneval/H2-low-20k\summary.json
+wrote <repo>/bench/humaneval/H2-low-20k\summary.json
 server: restoring product defaults
 listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
 === done 19:54
+=== example check A/B 2026-10-09 12:59 engine 75eaee882
+listen 0.0.0.0:8080  think=True effort=medium budget=20480  harness-proofing=True  backend-sampling=True
+layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:18080
+example-check layer on :8081 health=1
+--- L0-layer-medium (http://127.0.0.1:8080) 12:59
+
+pass@1 96.34%  (158/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1514.1s
+wrote <repo>/bench/humaneval/L0-layer-medium\summary.json
+--- L1-layer-ec-medium (http://127.0.0.1:8081) 13:24
+
+pass@1 97.56%  (160/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1904.9s
+wrote <repo>/bench/humaneval/L1-layer-ec-medium\summary.json
+=== done 13:56

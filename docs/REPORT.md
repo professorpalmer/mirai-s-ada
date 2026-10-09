@@ -233,6 +233,58 @@ Not changed, by decision: the K/V cache stays q8_0. A q4_0 cache would double th
 KL-by-position receipt on this stack (1 flipped top token in 48 at depth for q4_0 against 1 in 160 for q8_0) is not
 a measurement on this model, so q4_0 is a knob until it is.
 
+### 6f. 10-09: K/V precision on Mirai S (receipts/mirai-port/kv_kl.log)
+
+KL divergence by token against the same model with f16 K/V: wikitext-2 test, 16,384-token chunks x 4, so every
+scored token sits at 8k-16k depth (`llama-perplexity --kl-divergence`).
+
+| K / V | Mean KL vs f16 | Top token the same | Max KL on one token | PPL vs f16 |
+| --- | ---: | ---: | ---: | ---: |
+| q8_0 / q8_0 | 0.00050 | 99.64% | 1.46 | +0.24% |
+| q4_0 / q4_0 | 0.0243 | 97.10% | 22.6 | +0.9% |
+
+q4_0 would fit about 2.3 times the positions in VRAM (the line from ~58k to ~130k), but on this model it flips the
+top token on 1 position in 34 and puts single tokens far off (KL 22.6). K/V stays q8_0, and MIRAI_CTK=q4_0 is not
+recommended.
+
+### 6g. 10-09: context checkpoints inside long messages (receipts/mirai-port/ckpt_ab.log)
+
+Mirai S is a hybrid model: the server keeps checkpoints of the recurrent state only at user-message starts and at
+the prompt end, so a prompt that changes inside one long message (an edited tool result, a file sent again) is read
+again from the start. Engine 75eaee882 adds `--checkpoint-every-nt N` (`LLAMA_ARG_CHECKPOINT_EVERY_NT`): a checkpoint
+every N tokens inside a message as well. 11 requests at 32k on one server (one long filler; only the end of that one
+message changes), layer off:
+
+| | N = 0 | N = 8192 |
+| --- | ---: | ---: |
+| the two requests that read the prompt again | 36.5 / 34.6 s | 6.6 / 4.5 s |
+| mean of the requests after the first | 15.0 s | 9.6 s |
+| text | | 11 of 11 identical |
+| decode | | same |
+| llama-server private memory | 17.8 GB | 18.5 GB |
+
+Requests that need no restore are about 1 s slower with it (the checkpoint copies), and each checkpoint holds the
+recurrent state in system RAM (~150 MiB, at most 32). Off by default; agent users with spare system RAM can set
+`LLAMA_ARG_CHECKPOINT_EVERY_NT=8192`.
+
+### 6h. 10-09: the example check in the layer, and exact copies in edit calls
+
+When a coding request has a function stub with docstring examples, the layer now runs those examples on the answer
+in the sandbox; if they fail, it sends one follow-up turn with the doctest report and returns the second answer.
+HumanEval 164 through the layer at medium, greedy (the two arms differ only where the follow-up was sent):
+
+| | layer | layer + example check |
+| --- | ---: | ---: |
+| HumanEval 164 | 158 | **160** (HumanEval/59 and /162 fixed, none lost) |
+| completion tokens | 162,920 | 200,988 (+23%) |
+
+On by default; `"example_check": false` per request or `--no-example-check` turns it off.
+
+Edit calls (an agent's `edit` tool, whose old text must match the file exactly): 120 requests on 40 windows of CPython
+stdlib files, temperature 1.0, thinking on. 91 edit calls, **0 rejected** (90 placed exactly as asked); the other 29
+requests read the file again first. A repair step for near-miss edit calls has nothing to fix here, so the layer has
+none.
+
 ## 7. Open
 
 1. Decode past ~58k positions is PCIe-bound (section 5b). The honest levers left are a 16 GB card (~180k positions by
