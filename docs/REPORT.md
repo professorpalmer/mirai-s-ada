@@ -285,6 +285,20 @@ stdlib files, temperature 1.0, thinking on. 91 edit calls, **0 rejected** (90 pl
 requests read the file again first. A repair step for near-miss edit calls has nothing to fix here, so the layer has
 none.
 
+### 6i. 10-09: AppWorld on this serve (receipts/mirai-port/appworld.log)
+
+AppWorld test_normal, all 168 tasks, the simplified ReAct code agent (temperature 1.0, seed 100, 50-step cap), raw
+Mirai S on the product server (`:18080`: medium effort, 20k thinking budget, harness-proofing), one RTX 4070 12 GB:
+
+| | task goal completion | scenario goal completion | by difficulty 1 / 2 / 3 |
+| --- | ---: | ---: | --- |
+| this serve, one RTX 4070 12 GB | **88.7** | **73.2** | 100.0 / 87.5 / 79.4 |
+| alesha-pro, Mirai's vLLM plugin, 4x RTX 3090 | 89.9 | 75.0 | 96.5 / 89.6 / 84.1 |
+| alesha-pro, BF16 reference | 95.8 | 91.1 | 100.0 / 97.9 / 90.5 |
+
+The 12 GB serve matches the vLLM run within noise (1.2 points is about 2 of 168 tasks, one seed each). alesha-pro's
+numbers: [qwen38-27b-bench-4x3090, agentic-v1](https://github.com/alesha-pro/qwen38-27b-bench-4x3090/tree/main/agentic-v1).
+
 ## 7. Open
 
 1. Decode past ~58k positions is PCIe-bound (section 5b). The honest levers left are a 16 GB card (~180k positions by
@@ -292,7 +306,7 @@ none.
    its quality on this model is measured (KL by position and the suite, not before).
 2. Prefill is at the card's int8 ceiling (section 6e); the quantizer kernel and the decode write path are worth a few
    percent each.
-3. Quality beyond the suite: AIME, MMLU-Pro and AppWorld have not been run on this serve. The suite's library-heavy
+3. Quality beyond the suite: AIME and MMLU-Pro have not been run on this serve (AppWorld: 6i). The suite's library-heavy
    coding items remain model-limited (MIME passes only raw at effort "low").
 4. Model-side: the MTP block's acceptance (78% at draft 2; DFlash 70% at draft 3). An on-policy draft head trained on
    this model's own outputs is the one lever that would move decode below the line; that is a change to the model (Mirai Labs' checkpoint, alesha-pro's GGUF), not to this serve.

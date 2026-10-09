@@ -60,6 +60,7 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | speculative decoding | none | MTP draft at every depth, outputs identical to drafting off |
 | HumanEval 164, greedy, tests run in a sandbox | | **158** at medium or at effort "low"; 154 with thinking off; **160** through the layer with the example check (since bundle-20261009) |
 | long exact-work suite, 37 tasks, raw / through the layer | 13 / 30 (on the reference fork) | **18 / 28** (12 rescues, 2 losses); coding family over two seed sets 7 / **12** of 24, at effort "low" 6 / 8 of 12 |
+| AppWorld test_normal, 168 tasks, ReAct code agent (task / scenario goal completion) | | **88.7 / 73.2** on this one 12 GB card; alesha-pro measured 89.9 / 75.0 on Mirai's vLLM plugin (4x RTX 3090), BF16 95.8 / 91.1 |
 | apps that send `effort: "high"` | template error on each request | answered (changed to medium) |
 
 The receipts for each row are in `receipts/mirai-port/` and `bench/`. `docs/REPORT.md` and `docs/PREFILL.md` tell how
