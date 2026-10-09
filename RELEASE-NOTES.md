@@ -111,6 +111,23 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261008d (the shared CUDA pool, made safe)
+
+Same model file, launcher and layer. New engine binaries (engine commit `8ebd8348d`; the change is in `ggml-cuda.dll`).
+
+- **The shared CUDA pool is safe now.** The launcher turns on one CUDA memory pool for the main and the MTP draft
+  context (`MIRAI_SHARED_POOL`, 188 MiB less VRAM, so about 5k more positions in VRAM). The two contexts run on two
+  CUDA streams, and a block freed by one stream could be used by the other before the first was done with it. That is
+  a race: it depends on timing. On the sister Bonsai serve, an RTX 2060 SUPER got 1-token answers to fresh long
+  prompts because of it (fresh 60k prompts: 18 of 18). Now each graph waits for the other stream's last graph, so the
+  two streams cannot reuse each other's blocks too early (the same RTX 2060 SUPER: 0 of 18, same speed).
+- **On the RTX 4070 we did not see the race with Mirai S**: fresh prompts of 20k to 100k, two rounds, gave normal
+  answers with the pool on and off (20 of 20) and with this engine and the pool on (10 of 10), at the same speed
+  (100k prompt: 141-142 s in every arm; `receipts/pool_ab_mirai.log`). A slower card could hit it; this engine
+  removes the risk and keeps the 188 MiB.
+- `MIRAI_SHARED_POOL=0` turns the pool off, as before; at the engine level, `GGML_CUDA_SHARED_POOL=0` now also means
+  off (before, any value turned it on).
+
 ## bundle-20261008c (agent requests with many tools)
 
 Same model file, launcher and layer. New engine binaries (engine commit `6f2d47e3e`; the change is in `llama.dll`).

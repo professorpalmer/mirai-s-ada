@@ -1,0 +1,36 @@
+21:11 arm pool-on (): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB) spec   mtp draft 2 (2 past the VRAM line), draft window 16384 (drafting on); lookup ngram-mod up to 32 (MIRAI_L
+{"tag": "pool-on-r1", "depth": 20000, "prompt_n": 20120, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 19.8}
+{"tag": "pool-on-r1", "depth": 30000, "prompt_n": 29763, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 30.4}
+{"tag": "pool-on-r1", "depth": 40000, "prompt_n": 39743, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 42.6}
+{"tag": "pool-on-r1", "depth": 60000, "prompt_n": 59724, "completion": 56, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 70.9}
+{"tag": "pool-on-r1", "depth": 100000, "prompt_n": 99728, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each describing a sp", "seconds": 142.5}
+{"tag": "pool-on-r2", "depth": 20000, "prompt_n": 20004, "completion": 58, "finish": "stop", "head": "The records listed above are signal, harbor, violet, granite, lantern,", "seconds": 21.0}
+{"tag": "pool-on-r2", "depth": 30000, "prompt_n": 29731, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 30.4}
+{"tag": "pool-on-r2", "depth": 40000, "prompt_n": 39740, "completion": 52, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 42.4}
+{"tag": "pool-on-r2", "depth": 60000, "prompt_n": 59726, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 70.8}
+{"tag": "pool-on-r2", "depth": 100000, "prompt_n": 99729, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 141.9}
+21:22 arm pool-off (MIRAI_SHARED_POOL=0): health=1; kv     tiered: cells 0..51456 in VRAM, 51456..262144 in system RAM (VRAM margin 800 MiB) spec   mtp draft 2 (2 past the VRAM line), draft window 16384 (drafting on); lookup ngram-mod up to 32 (MIRAI_L
+{"tag": "pool-off-r1", "depth": 20000, "prompt_n": 20123, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 19.6}
+{"tag": "pool-off-r1", "depth": 30000, "prompt_n": 29732, "completion": 52, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 30.0}
+{"tag": "pool-off-r1", "depth": 40000, "prompt_n": 39746, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 42.4}
+{"tag": "pool-off-r1", "depth": 60000, "prompt_n": 59720, "completion": 52, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 70.6}
+{"tag": "pool-off-r1", "depth": 100000, "prompt_n": 99730, "completion": 49, "finish": "stop", "head": "The records listed above are a sequence of notes from various reports ", "seconds": 141.8}
+{"tag": "pool-off-r2", "depth": 20000, "prompt_n": 20003, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 20.4}
+{"tag": "pool-off-r2", "depth": 30000, "prompt_n": 29731, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 30.2}
+{"tag": "pool-off-r2", "depth": 40000, "prompt_n": 39740, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 42.4}
+{"tag": "pool-off-r2", "depth": 60000, "prompt_n": 59721, "completion": 53, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 70.8}
+{"tag": "pool-off-r2", "depth": 100000, "prompt_n": 99727, "completion": 53, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 141.2}
+bench/one_token_ab_mirai.sh: line 27: 000,100000: command not found
+21:56 === done (marker written by hand: the script was edited while it ran and stopped before its own done line; all 20 answers were recorded)
+21:57 arm pool-on-0045 (; <candidate root, engine 8ebd8348d>): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB) spec   mtp draft 2 (2 past the VRAM line), draft window 16384 (drafting on); lookup ngram-mod up to 32 (MIRAI_L
+{"tag": "pool-on-0045-r1", "depth": 20000, "prompt_n": 20126, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 19.5}
+{"tag": "pool-on-0045-r1", "depth": 30000, "prompt_n": 29761, "completion": 53, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 30.0}
+{"tag": "pool-on-0045-r1", "depth": 40000, "prompt_n": 39740, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 42.4}
+{"tag": "pool-on-0045-r1", "depth": 60000, "prompt_n": 59721, "completion": 52, "finish": "stop", "head": "The records listed above are a sequence of numbered notes, each descri", "seconds": 72.3}
+{"tag": "pool-on-0045-r1", "depth": 100000, "prompt_n": 99727, "completion": 51, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 142.2}
+{"tag": "pool-on-0045-r2", "depth": 20000, "prompt_n": 20003, "completion": 53, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 20.6}
+{"tag": "pool-on-0045-r2", "depth": 30000, "prompt_n": 29764, "completion": 52, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 30.3}
+{"tag": "pool-on-0045-r2", "depth": 40000, "prompt_n": 39737, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 42.6}
+{"tag": "pool-on-0045-r2", "depth": 60000, "prompt_n": 59721, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 70.7}
+{"tag": "pool-on-0045-r2", "depth": 100000, "prompt_n": 99724, "completion": 54, "finish": "stop", "head": "The records listed above are a sequence of notes, each identifying a s", "seconds": 141.9}
+22:07 === done
