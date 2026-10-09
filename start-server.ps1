@@ -202,9 +202,26 @@ if ($Tier) {
     }
 }
 
+# Checkpoints inside long messages (engine 75eaee882 and later). A prompt that changes inside one long message (an edited
+# tool result, a file sent again) then restores the nearest checkpoint instead of reading the whole prompt again: at 32k
+# 34.6-36.5 s -> 4.5-6.6 s, text identical (docs/REPORT.md 6g). It costs no VRAM, and it does not raise the server's
+# limit of 32 checkpoints per slot (~150 MiB of system RAM each), which a long session already fills with checkpoints
+# at the ends of requests; it only places some inside long messages too. Long prompts that need no restore take about
+# 1 s longer. MIRAI_CKPT_EVERY=0 turns it off; a number sets the spacing in tokens.
+$CkptNote = ''
+if ($Help -match '--checkpoint-every-nt' -and -not $env:LLAMA_ARG_CHECKPOINT_EVERY_NT) {
+    if ($env:MIRAI_CKPT_EVERY -eq '0') {
+        $CkptNote = 'only at user messages and prompt ends (MIRAI_CKPT_EVERY=0)'
+    } else {
+        $env:LLAMA_ARG_CHECKPOINT_EVERY_NT = if ($env:MIRAI_CKPT_EVERY) { $env:MIRAI_CKPT_EVERY } else { '8192' }
+        $CkptNote = "also every $($env:LLAMA_ARG_CHECKPOINT_EVERY_NT) tokens inside long messages (MIRAI_CKPT_EVERY=0 turns it off)"
+    }
+}
+
 Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine $(if (Test-Path (Join-Path $Root 'engine\.git')) { (git -C (Join-Path $Root 'engine') rev-parse --short HEAD) } else { '?' }))"
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
+if ($CkptNote) { Write-Host "ckpt   $CkptNote" }
 if ($TierCells -gt 0 -and $FreeMiB) {
     # The VRAM line is set from the free VRAM at start. Show it, so a low line has a visible cause (other programs that
     # hold VRAM when the server starts move the line down; a user report had 2.3 GB held at one start).
@@ -225,7 +242,7 @@ if ($Spec -gt 0) {
     Write-Host "       To turn it on: Remove-Item Env:MIRAI_SPEC (or open a new window), then start again."
 }
 # the launcher sets these itself, and they stay in the window after a run: not the user's settings
-$Own = @('BONSAI_LAYER_KEY', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
+$Own = @('BONSAI_LAYER_KEY', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'LLAMA_ARG_CHECKPOINT_EVERY_NT', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
          'LLAMA_MTP_DRAFT_UBATCH', 'GGML_MIRAI_PREFILL_PLANES', 'GGML_MIRAI_LEVELS_MIB')
 $Listed = @($UserEnv | Where-Object { $_.Name -notin $Own -and $_.Value })
 if ($Listed.Count -gt 0) {

@@ -119,10 +119,11 @@ Same model file. New engine binaries (engine commit `75eaee882`), launcher and l
   the layer runs the examples on the answer in the sandbox; if they fail, it sends one follow-up turn with the report.
   HumanEval through the layer at medium: 158 -> **160** of 164, none lost, for +23% completion tokens.
   `"example_check": false` per request or `--no-example-check` turns it off.
-- **Checkpoints inside long messages (option).** A prompt that changes inside one long message (an edited tool result,
-  a file sent again) was read again from the start. `LLAMA_ARG_CHECKPOINT_EVERY_NT=8192` keeps a checkpoint every
-  8,192 tokens inside a message too: at 32k, those requests took 4.5-6.6 s instead of 34.6-36.5 s, with the same text.
-  Off by default: each checkpoint takes ~150 MiB of system RAM (at most 32), and other requests are ~1 s slower.
+- **Checkpoints inside long messages, on by default.** A prompt that changes inside one long message (an edited tool
+  result, a file sent again) was read again from the start. The server now also keeps a checkpoint every 8,192 tokens
+  inside a message: at 32k, those requests took 4.5-6.6 s instead of 34.6-36.5 s, with the same text. It costs no VRAM
+  and does not raise the server's limit of 32 checkpoints per slot (~150 MiB of system RAM each, which a long session
+  already fills); long prompts that need no restore take about 1 s longer. `MIRAI_CKPT_EVERY=0` turns it off.
 - **The launcher shows the free VRAM at start** (`vram` line) and gives a warning when other programs hold much of it.
   The VRAM line is set from the free VRAM at start, so a low line now has a visible cause.
 - **Layer:** the run-on-the-example sentence is decided from the first user message only. Before, a later message with

@@ -264,8 +264,9 @@ message changes), layer off:
 | llama-server private memory | 17.8 GB | 18.5 GB |
 
 Requests that need no restore are about 1 s slower with it (the checkpoint copies), and each checkpoint holds the
-recurrent state in system RAM (~150 MiB, at most 32). Off by default; agent users with spare system RAM can set
-`LLAMA_ARG_CHECKPOINT_EVERY_NT=8192`.
+recurrent state in system RAM (~150 MiB). The server's limit stays 32 checkpoints per slot, which a long session
+already fills with checkpoints at the ends of requests, so the worst-case RAM does not change. On by default since the
+launcher of 10-09 evening; `MIRAI_CKPT_EVERY=0` turns it off.
 
 ### 6h. 10-09: the example check in the layer, and exact copies in edit calls
 
