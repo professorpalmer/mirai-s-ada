@@ -111,6 +111,25 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261010 (system RAM sized at start, a faster verification step)
+
+Same model file. New engine binaries (engine commit `f16e386f6`) and launcher.
+
+- **System RAM sized at start (`ram` line).** The server's memory commit is the VRAM it holds (Windows charges that
+  to the process too), the K/V past the VRAM line (~6.8 GB at 262k), the prompt cache (default limit 8 GiB; one entry
+  for a 26k-token prompt is ~2 GB) and the checkpoints. With the old defaults, 7 sequential thinking requests with
+  26k-token prompts took the server to **22.1 GB** on a 32 GB machine; on 16 GB the same engine stopped with
+  "bad allocation" and then exited (a user report). Now: under 24 GB of RAM, a 1 GiB prompt cache and 8 checkpoints;
+  under 48 GB, a 4 GiB cache (the 32 checkpoints stay: they make agent turns fast); 48 GB and more, unchanged. The
+  same run: **17.8 GB**, 7/7 answers (`receipts/ram_ab_mirai.log`). The launcher gives a warning when much less memory is free than the server can
+  use. `LLAMA_ARG_CACHE_RAM` / `LLAMA_ARG_CTX_CHECKPOINTS` set by hand win.
+- **Draft verification steps slightly faster.** The conv-state concat of the gated delta net ran in a generic kernel
+  (48 calls of 14.5 us per step). The engine's transpose kernel for this layout, before enabled only on GB10, now runs
+  on every NVIDIA card: decode +0.7-1.2 %, the same text in 6/6 greedy answers.
+- **Measured, not changed:** a CUPTI kernel trace of one decode step. 78 % of a 1-token step is the trellis mat-vec,
+  which reads the weights at ~76 % of this card's memory bandwidth. The integer work of the trellis decode, not the
+  memory, is probably the limit there.
+
 ## bundle-20261009 (the example check, checkpoints inside long messages, the free-VRAM line)
 
 Same model file. New engine binaries (engine commit `75eaee882`), launcher and layer.

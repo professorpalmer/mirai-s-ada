@@ -236,6 +236,7 @@ file. This project did not measure the vector on the suite.
 | `MIRAI_KQ_MASK_PACKED` / `MIRAI_UBATCH` | 1 / 1024 | 1-bit attention mask; micro-batch (2048 = +5.6% prefill for approximately 570 MiB of VRAM) |
 | `MIRAI_LEVELS_MIB` | 128 | memory size of the level-decode chunk for long prompts |
 | `MIRAI_SHARED_POOL` | 1 | one transient CUDA pool for the target and draft contexts, with a 256-token draft micro-batch: gives back 188 MiB of VRAM (approximately 5.7k positions); outputs, decode and acceptance do not change (E23); 0 disables it |
+| `LLAMA_ARG_CACHE_RAM` / `LLAMA_ARG_CTX_CHECKPOINTS` | from the RAM (`ram` line) | prompt-cache limit in MiB and checkpoints per slot; set by hand, they replace the launcher's sizing |
 | `MIRAI_LAYER` | 1 | 0 = no layer |
 | `MIRAI_STDERR_FILE` / `MIRAI_RESTARTS` | none / 3 | file that keeps the raw stderr of the server (assert text); number of restarts after an abort before the launcher stops |
 | `MIRAI_PORT`, `MIRAI_MODEL`, `MIRAI_LOG_FILE` | 8080, auto, none | model: `models\Qwen3.8-27B-S-mirai-mtpq4.gguf` if present, else the published file |
@@ -276,9 +277,13 @@ drafting (`docs/REPORT.md`, sections 5b and 6e).
   overlap of the level decode behind the GEMM gave 0 to -2.5% (`docs/PREFILL.md`). Each of the remaining options
   gives only a few percent.
 - **The K/V cache stays at q8_0.** A q4_0 cache (`MIRAI_CTK=q4_0`) puts approximately two times the positions in
-  VRAM. This project did not measure its quality cost on this model. Thus it is a knob and not a default.
-- **Host RAM**: the full 262k cache keeps approximately 7 GB of K/V in pinned system RAM. The computer must have that
-  much free RAM.
+  VRAM, but on this model it changes the top token on 1 position in 34 (KL 0.0243 vs 0.0005 for q8_0; docs/REPORT.md
+  6f). It is a knob and not a default, and it is not recommended.
+- **System RAM: 32 GB recommended.** The server's memory commit is the VRAM it holds (Windows charges that to the
+  process too, ~12 GB), the K/V past the VRAM line (~6.8 GB of pinned RAM at 262k), the prompt cache and the
+  checkpoints. The launcher sizes the last two from the RAM (`ram` line): under 24 GB, a 1 GiB prompt cache and 8
+  checkpoints; under 48 GB, a 4 GiB cache. With 16 GB, also enlarge the page file or use `MIRAI_CTX=131072`, or the
+  server can stop with "bad allocation".
 - **One slot** (`-np 1`). The reference fork also requires one slot for this model.
 - **Two launchers.** `start-server.ps1` (Windows) calculates the VRAM line and starts the layer. `start-server.sh`
   (Linux) starts the raw server with the line that you give. On Linux, the layer is not connected or tested.

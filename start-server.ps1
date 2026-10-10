@@ -218,10 +218,45 @@ if ($Help -match '--checkpoint-every-nt' -and -not $env:LLAMA_ARG_CHECKPOINT_EVE
     }
 }
 
+# System RAM. The server's commit charge is the VRAM it holds (Windows charges that to the process as well), plus the
+# pinned K/V tail past the VRAM line, plus the prompt cache (default limit 8 GiB; one entry of a 26k-token prompt is
+# ~2 GB with its checkpoint copies), plus the checkpoints (up to 32, ~150 MiB each). With the defaults, 7 sequential
+# thinking requests with 26k-token prompts took the server to 22.1 GB on a 32 GB machine (the page file grew); on a
+# 16 GB machine the same engine stopped with "bad allocation" and then exited (a user report). With a 4096 MiB cache:
+# 17.8 GB. So: under 24 GB of RAM, a 1024 MiB prompt cache and 8 checkpoints; under 48 GB, a 4096 MiB
+# cache (checkpoints stay at 32: they make agent turns fast); 48 GB and more, the server defaults.
+# LLAMA_ARG_CACHE_RAM / LLAMA_ARG_CTX_CHECKPOINTS set by hand win.
+$RamArgs = @()
+$RamNote = ''
+$RamShort = $false
+try {
+    $RamGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+    $CacheMiB = if ($RamGiB -lt 24) { 1024 } elseif ($RamGiB -lt 48) { 4096 } else { 8192 }
+    $Ckpts = if ($RamGiB -lt 24) { 8 } else { 32 }
+    if ($env:LLAMA_ARG_CACHE_RAM) { $CacheMiB = $env:LLAMA_ARG_CACHE_RAM } elseif ($RamGiB -lt 48) { $RamArgs += @('--cache-ram', "$CacheMiB") }
+    if ($env:LLAMA_ARG_CTX_CHECKPOINTS) { $Ckpts = $env:LLAMA_ARG_CTX_CHECKPOINTS } elseif ($RamGiB -lt 24) { $RamArgs += @('--ctx-checkpoints', "$Ckpts") }
+    # what the server commits at load and at most, against what is free now (RAM + page file)
+    $FreeCommitMiB = [int]((Get-CimInstance Win32_OperatingSystem).FreeVirtualMemory / 1KB)
+    $VramMiB = if ($FreeMiB) { $FreeMiB } else { 12288 }
+    $TailMiB = if ($TierCells -gt 0) { [int](($Ctx - $TierCells) * $CellBytes / 1MB) } else { 0 }
+    $NeedMiB = $VramMiB + $TailMiB + 2048 + [int]$CacheMiB + [int]$Ckpts * 150
+    # a system-managed page file grows by a few GB without trouble (32 GB test machine: 40.7 -> 43.8 GiB limit)
+    $RamShort = $NeedMiB -gt $FreeCommitMiB + $(if ($RamGiB -lt 24) { 0 } else { 4096 })
+    $RamNote = "$RamGiB GB: prompt cache $CacheMiB MiB, checkpoints $Ckpts; the server can commit ~$NeedMiB MiB (VRAM $VramMiB, K/V tail $TailMiB), $FreeCommitMiB MiB free now"
+} catch { }
+
 Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine $(if (Test-Path (Join-Path $Root 'engine\.git')) { (git -C (Join-Path $Root 'engine') rev-parse --short HEAD) } else { '?' }))"
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
 if ($CkptNote) { Write-Host "ckpt   $CkptNote" }
+if ($RamNote) {
+    Write-Host "ram    $RamNote"
+    if ($RamShort) {
+        Write-Host "       Less is free than the server can use. Windows can grow a system-managed page file; if it cannot, the"
+        Write-Host "       server stops with 'bad allocation'. Close other programs, enlarge the page file, or use a smaller window"
+        Write-Host "       (MIRAI_CTX=131072 keeps most of the K/V in VRAM)."
+    }
+}
 if ($TierCells -gt 0 -and $FreeMiB) {
     # The VRAM line is set from the free VRAM at start. Show it, so a low line has a visible cause (other programs that
     # hold VRAM when the server starts move the line down; a user report had 2.3 GB held at one start).
@@ -313,7 +348,7 @@ Set-Location $Bin
 # The launcher sizes the GPU memory itself (the VRAM line). The engine's own automatic fit has nothing to adjust with
 # every layer set, and it only printed "failed to fit params to free device memory ... abort". Turn it off.
 [string[]]$FitArgs = if ($Help -match '--fit ') { @('--fit', 'off') } else { @() }
-[string[]]$ServerArgs = @() + $TierArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + $FitArgs + @(
+[string[]]$ServerArgs = @() + $TierArgs + $RamArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + $FitArgs + @(
     '--reasoning-budget', "$ThinkBudget",
     '-n', '24576',
     '-m', $Model,

@@ -1,0 +1,31 @@
+# System RAM of the Mirai S server, RTX 4070, 32 GB RAM: 7 sequential thinking requests, each with its own ~26.5k-token
+# prompt (no shared prefix), max_tokens 4096, layer off. Server private bytes and system commit sampled once per second.
+# mirai-default = launcher of bundle-20261009 (prompt cache 8 GiB, 32 checkpoints); mirai-ramtier = bundle-20261010
+# launcher on 32 GB (prompt cache 4 GiB, 32 checkpoints); mirai-ramrule = an earlier variant (2356 MiB, 10 checkpoints).
+23:13 arm mirai-default (): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB) ckpt   also every 8192 tokens inside long messages (MIRAI_CKPT_EVERY=0 turns it off) 
+{"tag": "mirai-default", "i": 0, "t0": "23:13:56", "status": 200, "prompt_n": 26625, "predicted_n": 1006, "finish": "stop", "wall_s": 39.5}
+{"tag": "mirai-default", "i": 1, "t0": "23:14:35", "status": 200, "prompt_n": 26568, "predicted_n": 698, "finish": "stop", "wall_s": 34.9}
+{"tag": "mirai-default", "i": 2, "t0": "23:15:10", "status": 200, "prompt_n": 26514, "predicted_n": 608, "finish": "stop", "wall_s": 33.8}
+{"tag": "mirai-default", "i": 3, "t0": "23:15:44", "status": 200, "prompt_n": 26504, "predicted_n": 863, "finish": "stop", "wall_s": 38.1}
+{"tag": "mirai-default", "i": 4, "t0": "23:16:22", "status": 200, "prompt_n": 26504, "predicted_n": 690, "finish": "stop", "wall_s": 34.8}
+{"tag": "mirai-default", "i": 5, "t0": "23:16:57", "status": 200, "prompt_n": 26504, "predicted_n": 951, "finish": "stop", "wall_s": 38.2}
+{"tag": "mirai-default", "i": 6, "t0": "23:17:35", "status": 200, "prompt_n": 26504, "predicted_n": 744, "finish": "stop", "wall_s": 35.9}
+  samples 266: server private start 0 MiB, peak 22073 MiB; system commit start 15.36, peak 43.75 GiB (+28.39)
+23:59 arm mirai-ramrule (): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB) ckpt   also every 8192 tokens inside long messages (MIRAI_CKPT_EVERY=0 turns it off) 
+{"tag": "mirai-ramrule", "i": 0, "t0": "23:59:13", "status": 200, "prompt_n": 26625, "predicted_n": 848, "finish": "stop", "wall_s": 36.7}
+{"tag": "mirai-ramrule", "i": 1, "t0": "23:59:50", "status": 200, "prompt_n": 26568, "predicted_n": 803, "finish": "stop", "wall_s": 36.2}
+{"tag": "mirai-ramrule", "i": 2, "t0": "00:00:26", "status": 200, "prompt_n": 26514, "predicted_n": 753, "finish": "stop", "wall_s": 35.5}
+{"tag": "mirai-ramrule", "i": 3, "t0": "00:01:01", "status": 200, "prompt_n": 26504, "predicted_n": 771, "finish": "stop", "wall_s": 35.9}
+{"tag": "mirai-ramrule", "i": 4, "t0": "00:01:37", "status": 200, "prompt_n": 26504, "predicted_n": 939, "finish": "stop", "wall_s": 38.1}
+{"tag": "mirai-ramrule", "i": 5, "t0": "00:02:15", "status": 200, "prompt_n": 26504, "predicted_n": 870, "finish": "stop", "wall_s": 38.6}
+{"tag": "mirai-ramrule", "i": 6, "t0": "00:02:54", "status": 200, "prompt_n": 26504, "predicted_n": 739, "finish": "stop", "wall_s": 35.8}
+  samples 263: server private start 0 MiB, peak 17809 MiB; system commit start 15.50, peak 39.99 GiB (+24.49)
+00:05 arm mirai-ramtier (): health=1; kv     tiered: cells 0..57600 in VRAM, 57600..262144 in system RAM (VRAM margin 800 MiB) ckpt   also every 8192 tokens inside long messages (MIRAI_CKPT_EVERY=0 turns it off) 
+{"tag": "mirai-ramtier", "i": 0, "t0": "00:05:26", "status": 200, "prompt_n": 26625, "predicted_n": 759, "finish": "stop", "wall_s": 36.3}
+{"tag": "mirai-ramtier", "i": 1, "t0": "00:06:03", "status": 200, "prompt_n": 26568, "predicted_n": 740, "finish": "stop", "wall_s": 36.1}
+{"tag": "mirai-ramtier", "i": 2, "t0": "00:06:39", "status": 200, "prompt_n": 26514, "predicted_n": 856, "finish": "stop", "wall_s": 37.9}
+{"tag": "mirai-ramtier", "i": 3, "t0": "00:07:17", "status": 200, "prompt_n": 26504, "predicted_n": 606, "finish": "stop", "wall_s": 33.8}
+{"tag": "mirai-ramtier", "i": 4, "t0": "00:07:51", "status": 200, "prompt_n": 26504, "predicted_n": 772, "finish": "stop", "wall_s": 36.6}
+{"tag": "mirai-ramtier", "i": 5, "t0": "00:08:27", "status": 200, "prompt_n": 26504, "predicted_n": 907, "finish": "stop", "wall_s": 38.9}
+{"tag": "mirai-ramtier", "i": 6, "t0": "00:09:06", "status": 200, "prompt_n": 26504, "predicted_n": 872, "finish": "stop", "wall_s": 37.3}
+  samples 264: server private start 0 MiB, peak 17807 MiB; system commit start 15.50, peak 39.78 GiB (+24.28)
