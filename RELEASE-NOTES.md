@@ -129,6 +129,9 @@ Same model file. New engine binaries (engine commit `75eaee882`), launcher and l
 - **Layer:** the run-on-the-example sentence is decided from the first user message only. Before, a later message with
   a code block could add it to the first message in the middle of a conversation, so the server read the prompt again
   from there.
+- **Launcher fix:** on Windows PowerShell 5.1 with Python on PATH but without the `wasmtime` package, the probe for the
+  optional layer stopped the launcher before the server started. The probe now runs only when the layer's runtime is
+  present and cannot stop the launcher; the layer turns off with its `layer  off:` line as intended.
 - **`llama-perplexity` fixed:** the copy in bundle-20261008d was older than its library and stopped at an assertion.
 - Measured, not changed: q4_0 K/V costs this model far more than q8_0 (top token flipped on 1 position in 34, single
   tokens far off; docs/REPORT.md 6f), so K/V stays q8_0.
