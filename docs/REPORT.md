@@ -300,6 +300,29 @@ Mirai S on the product server (`:18080`: medium effort, 20k thinking budget, har
 The 12 GB serve matches the vLLM run within noise (1.2 points is about 2 of 168 tasks, one seed each). alesha-pro's
 numbers: [qwen38-27b-bench-4x3090, agentic-v1](https://github.com/alesha-pro/qwen38-27b-bench-4x3090/tree/main/agentic-v1).
 
+### 6j. 10-10: where a step spends its time, and system RAM (receipts/ram_ab_mirai.log)
+
+Kernel timeline from CUPTI activity records (CUDA graphs on, `GGML_CUDA_BATCH_INVARIANT=1` as the launcher sets it):
+
+| Step | GPU time | Largest items |
+|---|---:|---|
+| 1 token, drafting off | 23.0 ms | trellis mat-vec 78 % (~76 % of the card's memory bandwidth), activation rotate + quantize 7.5 % (512 small launches), output head 4 % |
+| 3 tokens (a draft-2 verification step) | 27.3 ms | trellis MMA 78 %, activation prep 8 %, gated delta net 2 % |
+| 1,024-token prefill micro-batch | 836 ms | int8 GEMM 37 %, gated delta net 12.4 % (2.17 ms per layer: one token after another), level decode 11 %, output epilogue 8 %, the 17-wide activation transform 7 % |
+
+- The trellis mat-vec is limited by the integer work of the decode (hash and level per state), not by memory. A step
+  cannot get much faster without a cheaper decode.
+- The gated-delta-net conv-state concat used a generic kernel in multi-token steps (48 x 14.5 us per verification
+  step). The engine's transpose kernel for this layout, before enabled only on GB10, now runs on every NVIDIA card:
+  decode +0.7-1.2 %, the same text (bundle-20261010).
+- Tried and dropped: the one-kernel activation transform for 1-3 tokens (slower: one block per token), and the
+  two-kernel split for prefill (24 % slower micro-batches).
+
+System RAM: with the 20261009 defaults, 7 sequential thinking requests with 26k-token prompts took the server to
+22.1 GB of private bytes on a 32 GB machine (system commit +28.4 GiB; the page file grew). Windows also charges the
+VRAM the server holds to its commit. bundle-20261010 sizes the prompt cache and checkpoints from the RAM: 17.8 GB,
++24.3 GiB, 7/7 answers.
+
 ## 7. Open
 
 1. Decode past ~58k positions is PCIe-bound (section 5b). The honest levers left are a 16 GB card (~180k positions by
