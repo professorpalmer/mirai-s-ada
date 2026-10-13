@@ -329,7 +329,7 @@ python bench\determinism_probe.py                             # same request and
 | `engine/` | Submodule: [`professorpalmer/llama.cpp-ada-mirai`](https://github.com/professorpalmer/llama.cpp-ada-mirai). The PrismML llama.cpp fork with these additions: the serving patches (tiered KV cache, draft window and tail, reasoning flags, batch-invariant kernels, op timing); the Mirai S codec as alesha-pro ported it to ggml (ggml types 90-93, CPU and CUDA kernels, rotation and scale tensors, split attention gate, graph hook); the prefill work of this project (one-plane FFN prompt numerics, packed 1-bit KQ mask, level-decode chunks). |
 | `start-server.ps1` | The Windows launcher. It calculates the VRAM line from measured fixed costs and starts the layer in front of llama-server. |
 | `start-server.sh` | The Linux launcher, from alesha-pro. It starts the raw server with the same flags. Optional: images (`MIRAI_MMPROJ`) and the refusal-direction vector (`MIRAI_CVEC`, `docs/CONTROL-VECTOR.md`). |
-| `tooling/` | `build_engine.bat` (Ninja + pip CUDA 13, sm_89), `install_bin.ps1`, `serve.ps1` / `stop.ps1` (hidden test server, log and PID files). |
+| `tooling/` | `build_engine.bat` (Ninja + pip CUDA 13, the GPU of the build machine), `install_bin.ps1`, `find_toolchain.py`, `serve.ps1` / `stop.ps1` (hidden test server, log and PID files). |
 | `layer/`, `suite/` | The layer and the long exact-work suite, from [`bonsai-ada-surgery`](https://github.com/professorpalmer/bonsai-ada-surgery), with the changes of this project (`layer/ORIGIN.md`). |
 | `bench/` | The measurement scripts, and the scoreboard and results of each run (`ML1`..`ML2f`, `E18`..`E21`, HumanEval arms). |
 | `receipts/` | Small text receipts that the documents refer to: profiles, greedy dumps from alesha-pro's reference fork, probe logs. `ubuntu-3090/` is the Linux check of alesha-pro (RTX 3090). |
@@ -338,16 +338,33 @@ python bench\determinism_probe.py                             # same request and
 
 ## Build from source (Windows)
 
-You need the C++ workload of VS 2022 Build Tools and the NVIDIA pip wheels. You do not need the CUDA toolkit. For
+You need Visual Studio 2022 or its Build Tools (any edition: Build Tools, Community, Professional or Enterprise) with
+the "Desktop development with C++" workload, Python, and the NVIDIA pip wheels. You do not need the CUDA toolkit. For
 Linux, refer to [Quick start (Linux)](#quick-start-linux-from-alesha-pro).
 
 ```powershell
-python -m pip install cmake ninja nvidia-cuda-nvcc nvidia-cuda-runtime nvidia-cublas nvidia-cuda-nvrtc
+python -m pip install cmake ninja nvidia-cuda-nvcc nvidia-cuda-runtime nvidia-cublas nvidia-cuda-nvrtc nvidia-cuda-cccl
 git clone --recurse-submodules https://github.com/professorpalmer/mirai-s-ada
 cd mirai-s-ada
 tooling\build_engine.bat llama-server      # approximately 30 min the first time
-tooling\install_bin.ps1                      # copies the result into bin\ next to the CUDA runtime DLLs
+tooling\install_bin.ps1                      # copies the result and the CUDA runtime DLLs into bin\
 ```
+
+- `build_engine.bat` finds Visual Studio with `vswhere.exe`, and the CUDA toolkit, cmake and ninja from the pip
+  packages of the `python` on PATH (`tooling\find_toolchain.py`). It builds for the GPU in the machine
+  (`MIRAI_CUDA_ARCH=native`). To build for other cards, set a list first, for example
+  `set MIRAI_CUDA_ARCH=75-real;86-real;89-real`. `MIRAI_JOBS` (default 6) sets the parallel compile jobs.
+- The CUDA 13 cuBLAS wheel has no `cublas.lib` / `cublasLt.lib`. `build_engine.bat` makes them from the DLLs the first
+  time (`dumpbin` + `lib`, in `nvidia\cu13\lib\x64`).
+
+**Troubleshooting**
+
+| Message | Cause | Fix |
+| --- | --- | --- |
+| `CUDA error: no kernel image is available for execution on the device` | the engine was built for another GPU architecture | set `MIRAI_CUDA_ARCH` (or leave it at `native` on the card that runs it), delete `build\`, build again |
+| `llama-server exited with code -1073741515` (`0xC0000135`) | the CUDA runtime DLLs are not next to `llama-server.exe` | run `tooling\install_bin.ps1` again; it copies `cublas64_13.dll`, `cublasLt64_13.dll`, `cudart64_13.dll`, `nvJitLink_130_0.dll` and `nvvm64_40_0.dll` from the pip wheels |
+| CMake: `CUDA::cudart includes non-existent path ...\include\cccl` | the CUB/Thrust headers are missing | `python -m pip install nvidia-cuda-cccl` |
+| CMake: `ggml-cuda links to: CUDA::cublas but the target was not found` | no cuBLAS import libraries | run `tooling\build_engine.bat` from a fresh window; if it still fails, `python tooling\find_toolchain.py implibs` after `vcvars64.bat` shows the error |
 
 ## Licenses and attribution
 
