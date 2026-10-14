@@ -111,6 +111,21 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261013 (decode past the VRAM line, build on any Windows machine)
+
+Same model file. New engine binaries (engine commit `cd4e9d8dd`).
+
+- **Decode past the VRAM line +10-17 %.** CUDA graphs kept the K/V prefetch for the part of the cache in system RAM
+  from running: the prefetch only runs when a step is not replayed from a graph. The engine now turns graphs off for
+  the steps whose attention reads that part, and keeps them on below the line. Mean decode, the same card and clocks
+  in both arms: 32k 65.7 -> 66.9, 128k 16.1 -> 18.8, 192k 10.5 -> 11.6 tok/s. The same text: HumanEval 164 greedy gave
+  identical answers on all 164 prompts with and without the change. `GGML_CUDA_KV_TIER_GRAPHS=1` keeps the old
+  behaviour. The server log has one line that says which mode the server uses.
+- **Build on any Windows machine** (issue #4): `tooling/build_engine.bat` finds Visual Studio with vswhere and the CUDA
+  toolkit, cmake and ninja from the Python pip packages (`tooling/find_toolchain.py`), and builds for the local GPU by
+  default (`MIRAI_CUDA_ARCH`). It makes the cuBLAS import libraries when the CUDA 13 wheel has none;
+  `tooling/install_bin.ps1` also copies the CUDA runtime DLLs.
+
 ## bundle-20261010 (system RAM sized at start, a faster verification step)
 
 Same model file. New engine binaries (engine commit `f16e386f6`) and launcher.
