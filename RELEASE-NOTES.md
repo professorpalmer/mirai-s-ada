@@ -111,6 +111,20 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261015 (images on Windows, images from agent tools)
+
+Same model file. New engine binaries (engine commit `de2104665`).
+
+- **Images on Windows: `MIRAI_MMPROJ`.** `start-server.ps1` now loads a vision projector (before, only `start-server.sh`
+  did). The encoder runs on the CPU by default and takes no VRAM from the cache; `MIRAI_MMPROJ_GPU=1` puts it on the
+  card and counts it in the VRAM line. The Qwen3.8-27B projector works, and so does PrismML's
+  `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf` (the same vision encoder): a test image was read correctly with both the
+  Responses and the chat API.
+- **Images from agent tools on the Responses API.** A harness on `/v1/responses` whose tool returned a screenshot got
+  HTTP 400 ("Output of tool call should be 'Input text'"), and every later request in that session failed. The engine
+  now takes the upstream fix (ggml-org/llama.cpp `4098fdc922`); the image reaches the model like an image in a user
+  message.
+
 ## bundle-20261014 (sparse reads past the VRAM line, faster long prefill)
 
 Same model file. New engine binaries (engine commit `784986b41`).
