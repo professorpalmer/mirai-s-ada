@@ -111,6 +111,26 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261014 (sparse reads past the VRAM line, faster long prefill)
+
+Same model file. New engine binaries (engine commit `784986b41`).
+
+- **Sparse host-tail reads, opt-in: `MIRAI_SPARSE=1`.** Past the VRAM line, a decode step normally reads every K/V
+  row in system RAM over PCIe. With sparse reads, each attention op reads the RAM pages whose stored int8 bounds give
+  the highest possible score for the current query (at least 12,288 positions or 1/8 of the RAM part, plus the last
+  1,024 positions) and skips the rest. RTX 4070, 262k window: mean decode at 192k **11.7 -> 16.2-17.0 tok/s**, 128k
+  about +20 %. Exact code copies and fact lookups (66 items at 160k / 200k / 245k) gave the same answers as the full
+  read. A thinner budget (1/16 of the RAM part) was faster (20.9 tok/s at 192k) but got one digit of one fact wrong at
+  245k, so the launcher uses 1/8. The bounds take about 166 MiB of VRAM, so the VRAM line is about 5k positions
+  shorter; that is why it is off by default. The launcher prints a `sparse host-tail reads` line when it is on.
+- **Long prefill on tensor cores** (the chunked gated-delta-net prefill of ggml-org/llama.cpp#29353): code prefill
+  +3.5 % at 128k and 192k. The float order of that step changes, so long answers can differ in wording: HumanEval 164
+  greedy 159 (bundle-20261013: 158), the five fails are a subset of the old six.
+- Also in the engine (all off by default): a partial staging buffer and in-place reads for small attention ops
+  (`GGML_CUDA_KV_TIER_STAGING_FRAC`, `GGML_CUDA_KV_TIER_STAGE_MIN_Q`), an f16 K/V path for long prefill
+  (`GGML_CUDA_FA_PREFILL_F16`), chunked flash attention for prefill at depth (`GGML_CUDA_FA_CHUNK`), and the
+  ADD + RMS_NORM + MUL fusion.
+
 ## bundle-20261013 (decode past the VRAM line, build on any Windows machine)
 
 Same model file. New engine binaries (engine commit `cd4e9d8dd`).

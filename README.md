@@ -53,7 +53,7 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | RTX 4070 12 GB, served, one slot | alesha-pro's reference fork (`llama.cpp-mirai-s`, the starting point) | this serve |
 | --- | ---: | ---: |
 | context window with q8_0 KV | 64k (11.0 GB) | **262,144** (tiered: approximately 58k positions in VRAM, the remainder in pinned RAM) |
-| decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **76.6 / 72.6 / 61.7 / 19.5 / 11.4** (60k is inside the VRAM line since the evening of 10-06; before that, 40.3). Past the VRAM line +10-17 % since bundle-20261013 (128k 16.1 -> 18.8, 192k 10.5 -> 11.6, both arms at stock clocks) |
+| decode, tok/s, at 0 / 16k / 60k / 120k / 180k | 40.0 / 38.1 / 33.5 (60k) / - / - | **76.6 / 72.6 / 61.7 / 19.5 / 11.4** (60k is inside the VRAM line since the evening of 10-06; before that, 40.3). Past the VRAM line +10-17 % since bundle-20261013 (128k 16.1 -> 18.8, 192k 10.5 -> 11.6, both arms at stock clocks); with `MIRAI_SPARSE=1` (bundle-20261014) 192k 11.7 -> 16.2-17.0 |
 | prefill, 16.8k-token prompt | approximately 1,000 | **1,090** (2048 micro-batch mode: 1,148) |
 | prefill, 130k-token prompt (cumulative) | - (64k window) | **639** (since bundle-20261008b; before: 509) |
 | decode when the answer copies the context (rewrite a 150-line file), tok/s, at 4k / 130k | - | **265.6 / 84.9** (lookup drafting in front of the MTP draft, since bundle-20261008; before: 86.5 / 20.1. New text: 75.7 / 17.3, the same as before. Same output) |
@@ -223,6 +223,7 @@ file. This project did not measure the vector on the suite.
 | `MIRAI_CTK` | q8_0 | K/V cache type |
 | `MIRAI_TIER` | 1 | 0 = all-VRAM cache (then a 64k window) |
 | `MIRAI_KV_VRAM_CELLS` | auto | sets a fixed VRAM line |
+| `MIRAI_SPARSE` | 0 | 1 = sparse reads past the VRAM line: each decode step reads the system-RAM K/V pages with the highest score bound (at least 12,288 positions or 1/8 of the RAM part, plus the last 1,024) and skips the rest. 192k decode 11.7 -> 16.2-17.0 tok/s on an RTX 4070, exact copies and fact lookups at 160k-245k the same as the full read; the bounds take about 166 MiB of VRAM (a line about 5k positions shorter). Engine bundle-20261014 or newer |
 | `MIRAI_VRAM_MARGIN` | 800 headless, 1300 with the display on this card | MiB that stay free below the demotion point |
 | `MIRAI_SPEC` / `MIRAI_SPEC_DEEP` | 2 / 2 (3 with dflash) | draft size, and draft size past the VRAM line |
 | `MIRAI_SPEC_TYPE` / `MIRAI_DRAFTER` | mtp / `models\dflash-Qwen3.8-27B-Q4_0.gguf` | `dflash` drafts with the DFlash drafter of ggml-org, not with the MTP block of the GGUF: +13% decode at depth 0, +8.5% at 16k, outputs identical, approximately 590 MiB more VRAM (approximately 17k fewer positions in VRAM). Download the drafter from `ggml-org/Qwen3.8-27B-GGUF` into `models\` |

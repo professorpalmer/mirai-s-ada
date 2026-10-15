@@ -12,6 +12,7 @@
 #   MIRAI_SPEC=0|2         draft size (2 = default)        MIRAI_TIER=0        64k all-VRAM window instead
 #   MIRAI_CTX=N            window (262144)                  MIRAI_KV_VRAM_CELLS pin the VRAM line
 #   MIRAI_VRAM_MARGIN=MiB  headroom (1000 headless / 1300 with the display on this card, from the Bonsai soaks)
+#   MIRAI_SPARSE=1         sparse reads past the VRAM line (192k decode 11.7 -> 17 tok/s; the line ~5k positions shorter)
 $ErrorActionPreference = 'Stop'
 # Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
 # common one) silently changes the server; the launcher prints them all at start.
@@ -57,6 +58,33 @@ $Tier = ($env:MIRAI_TIER -ne '0') -and $HasTier
 $Ctx = if ($env:MIRAI_CTX) { [int]$env:MIRAI_CTX } elseif ($Tier) { 262144 } else { 65536 }
 $Ctk = if ($env:MIRAI_CTK) { $env:MIRAI_CTK } else { 'q8_0' }
 $Port = if ($env:MIRAI_PORT) { [int]$env:MIRAI_PORT } else { 8080 }
+
+# Sparse host-tail reads (Bonsai patch 0055, engine 784986b41 on): a decode attention op past the VRAM line reads only the
+# host pages whose int8 bounds score highest (at least 12,288 cells or 1/8 of the host tail, plus the last 1,024 cells)
+# instead of the whole host tail. Mirai S, RTX 4070 (docs/research/sparse-20261014): 192k decode 11.7 -> 16.2 tok/s;
+# exact copies and needles equal to dense at 160k / 200k / 245k (1/16 of the tail missed a needle at 245k, N04). Opt-in:
+# MIRAI_SPARSE=1 with an engine that has it. The page-bound tables take VRAM for the whole window (514 B per host cell at
+# page 64, plus 64 MiB), counted in the line below. Prompt batches of 32+ tokens keep the packed mask and the dense read.
+$CudaDllPath = Join-Path $Bin 'ggml-cuda.dll'
+$CudaDll = if (Test-Path $CudaDllPath) { [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($CudaDllPath)) } else { '' }
+$SparseAvail = $CudaDll.Contains('GGML_CUDA_FA_SPARSE_MIN_HOST')
+if ($Tier -and $env:MIRAI_SPARSE -eq '1' -and -not $env:GGML_CUDA_FA_SPARSE) {
+    if (-not $SparseAvail) { Write-Warning "MIRAI_SPARSE=1: this engine has no sparse host-tail reads; dense" }
+    else {
+        $env:GGML_CUDA_FA_SPARSE = '12288,64,1024'
+        if (-not $env:GGML_CUDA_FA_SPARSE_FRAC) { $env:GGML_CUDA_FA_SPARSE_FRAC = '0.125' }   # N04 / N04b: 1/16 missed a needle at 245k
+        if (-not $env:GGML_CUDA_FA_SPARSE_FAST) { $env:GGML_CUDA_FA_SPARSE_FAST = '1' }
+        if (-not $env:GGML_CUDA_KV_TIER_STAGE_MIN_Q) { $env:GGML_CUDA_KV_TIER_STAGE_MIN_Q = '9' }
+        if (-not $env:GGML_CUDA_FA_SPARSE_MIN_HOST) { $env:GGML_CUDA_FA_SPARSE_MIN_HOST = '32768' }
+    }
+}
+$SparsePage = 0
+if ($env:GGML_CUDA_FA_SPARSE) {
+    $SparseParts = $env:GGML_CUDA_FA_SPARSE -split ','
+    if ([int]$SparseParts[0] -gt 0) { $SparsePage = if ($SparseParts.Count -gt 1 -and [int]$SparseParts[1] -gt 0) { [int]$SparseParts[1] } else { 64 } }
+}
+# bytes of page bounds per host cell: 16 attention layers x 4 KV heads x (int8 max + min per dim, 2 x 256, + one f16 scale)
+$SparseCellBytes = if ($SparsePage) { 16 * 4 * (2 * 256 + 2) / $SparsePage } else { 0 }
 
 # ---- Reasoning ------------------------------------------------------------------------------------------
 # templates\bonsai-template.jinja: the template every measurement here used, on both models (reasoning_effort,
@@ -188,8 +216,9 @@ if ($Tier) {
         # the mtpq4 file keeps 204 MiB less of weights resident (E23 POOLQ4 10,947): weights term 8,016 instead of 8,220
         $WeightsMiB = if ((Split-Path $Model -Leaf) -ieq 'Qwen3.8-27B-S-mirai-mtpq4.gguf') { 8016 } else { 8220 }
         $FixedMiB = if ($env:MIRAI_FIXED_MIB) { [int]$env:MIRAI_FIXED_MIB } elseif ($Spec -gt 0 -and $SpecType -eq 'dflash') { $DflashFixed + 150 * $Depth + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } elseif ($Spec -gt 0) { $WeightsMiB + 150 * $Depth + 664 + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } else { $WeightsMiB + $UBatchMiB + $LevelsExtraMiB + $PoolMiB }
-        $Budget = ($FreeMiB - $Margin - $FixedMiB) * 1MB - $Ctx * $CellBytes / 16
-        $TierCells = [int]([math]::Floor($Budget / ($CellBytes * 15 / 16) / 256) * 256)
+        if ($SparsePage) { $FixedMiB += 64 }   # first-fill buffer and table headroom (Bonsai VRAM trace at 245k, docs/receipts/vram245_*.csv there)
+        $Budget = ($FreeMiB - $Margin - $FixedMiB) * 1MB - $Ctx * $CellBytes / 16 - $Ctx * $SparseCellBytes
+        $TierCells = [int]([math]::Floor($Budget / ($CellBytes * 15 / 16 - $SparseCellBytes) / 256) * 256)
     }
     if ($TierCells -ge $Ctx) {
         $TierCells = 0
@@ -248,6 +277,7 @@ try {
 Write-Host "model  $(Split-Path $Model -Leaf)  (Mirai S, trellis 2.4b, on engine $(if (Test-Path (Join-Path $Root 'engine\.git')) { (git -C (Join-Path $Root 'engine') rev-parse --short HEAD) } else { '?' }))"
 Write-Host "window $Ctx / $Ctk"
 if ($TierCells -gt 0) { Write-Host "kv     tiered: cells 0..$TierCells in VRAM, $TierCells..$Ctx in system RAM (VRAM margin $Margin MiB)" }
+if ($TierCells -gt 0 -and $SparsePage) { Write-Host "kv     sparse host-tail reads: $($env:GGML_CUDA_FA_SPARSE) (B,P,R), FRAC $(if ($env:GGML_CUDA_FA_SPARSE_FRAC) { $env:GGML_CUDA_FA_SPARSE_FRAC } else { 0.0625 }), from $(if ($env:GGML_CUDA_FA_SPARSE_MIN_HOST) { $env:GGML_CUDA_FA_SPARSE_MIN_HOST } else { 0 }) host cells on; $([int](($Ctx - $TierCells) * $SparseCellBytes / 1MB) + 64) MiB of page bounds counted" }
 if ($CkptNote) { Write-Host "ckpt   $CkptNote" }
 if ($RamNote) {
     Write-Host "ram    $RamNote"
