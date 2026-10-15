@@ -1,4 +1,4 @@
-# Stop every llama-server started from this repo (bin\ or buildin, test launcher or product launcher) and clear PID
+# Stop every llama-server started from this repo (bin\ or build\bin, test launcher or product launcher) and clear PID
 # files. Servers started from other folders (for example the Bonsai serve) are left alone.
 $Root = Split-Path -Parent $PSScriptRoot
 $Bin = ($Root + '').ToLower()
