@@ -14,6 +14,7 @@
 #   MIRAI_VRAM_MARGIN=MiB  headroom (1000 headless / 1300 with the display on this card, from the Bonsai soaks)
 #   MIRAI_SPARSE=1         sparse reads past the VRAM line (192k decode 11.7 -> 17 tok/s; the line ~5k positions shorter)
 #   MIRAI_MMPROJ=file      images (vision projector, encoder on the CPU; MIRAI_MMPROJ_GPU=1 puts it on the card)
+#   MIRAI_CTK=q3_0         long-context cache (2.9x the positions in VRAM, 245k decode 3.8x; MIRAI_CTV for a separate V type)
 $ErrorActionPreference = 'Stop'
 # Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
 # common one) silently changes the server; the launcher prints them all at start.
@@ -58,6 +59,11 @@ $ApiKey = (Get-Content -Path $ApiKeyFile -Raw).Trim()
 $Tier = ($env:MIRAI_TIER -ne '0') -and $HasTier
 $Ctx = if ($env:MIRAI_CTX) { [int]$env:MIRAI_CTX } elseif ($Tier) { 262144 } else { 65536 }
 $Ctk = if ($env:MIRAI_CTK) { $env:MIRAI_CTK } else { 'q8_0' }
+# MIRAI_CTV: the V type when it should differ from K (same-type pairs run the fast tensor-core path; a mixed pair needs an
+# engine built with GGML_CUDA_FA_ALL_QUANTS). MIRAI_CTK=q3_0 (engine with patch 0056): 2.9x the positions in VRAM of q8_0,
+# 245k decode 9.6 -> 36.9 tok/s, copies and needles at 245k equal to q8_0, HumanEval 157/164; its per-token KL is high
+# (0.058), so it is a long-context option, not the default (docs/research/kvtypes-20261015 in the serve repo).
+$Ctv = if ($env:MIRAI_CTV) { $env:MIRAI_CTV } else { $Ctk }
 $Port = if ($env:MIRAI_PORT) { [int]$env:MIRAI_PORT } else { 8080 }
 
 # Vision projector (optional): MIRAI_MMPROJ=<file in models\ or a full path> (the Qwen3.8-27B projector, for example
@@ -209,7 +215,8 @@ $TierCells = 0
 [string[]]$TierArgs = @()
 $Margin = 0
 if ($Tier) {
-    $CellBytes = switch ($Ctk) { 'q8_0' { 34816 } 'q4_0' { 18432 } 'f16' { 65536 } default { 34816 } }
+    $HalfBytes = @{ 'q8_0' = 17408; 'q5_1' = 12288; 'q5_0' = 11264; 'q4_0' = 9216; 'q3_0' = 7168; 'f16' = 32768 }   # one of K or V per cell
+    $CellBytes = $(if ($HalfBytes.ContainsKey($Ctk)) { $HalfBytes[$Ctk] } else { 17408 }) + $(if ($HalfBytes.ContainsKey($Ctv)) { $HalfBytes[$Ctv] } else { 17408 })
     if ($env:MIRAI_KV_VRAM_CELLS) {
         $TierCells = [int]$env:MIRAI_KV_VRAM_CELLS
     } else {
@@ -404,7 +411,7 @@ Set-Location $Bin
     '-n', '24576',
     '-m', $Model,
     '--chat-template-file', (Join-Path $Root 'templates\bonsai-template.jinja'),
-    '-ngl', '99', '-fa', 'on', '-c', "$Ctx", '-np', '1', '-b', '2048', '-ub', "$UBatch", '-ctk', $Ctk, '-ctv', $Ctk,
+    '-ngl', '99', '-fa', 'on', '-c', "$Ctx", '-np', '1', '-b', '2048', '-ub', "$UBatch", '-ctk', $Ctk, '-ctv', $Ctv,
     '--host', $ListenHost, '--port', "$ListenPort", '--alias', 'mirai-s-27b', '--jinja',
     '--prio', '2', '--poll', '100', '--metrics', '--api-key', $ApiKey,
     '--temp', '1.0', '--top-p', '0.95', '--top-k', '20')

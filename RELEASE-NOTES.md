@@ -111,6 +111,19 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261016 (a long-context cache option: q3_0)
+
+Same model file. New engine binaries (engine commit `70b9db679`). The default does not change.
+
+- **`MIRAI_CTK=q3_0`: 2.9x the context in VRAM, decode at depth 2.6-3.8x.** A 3.5-bit K/V cache (the q3_0 type from
+  the Bonsai serve). RTX 4070, 262k window: the VRAM line goes from 58,624 to 167,680 positions, and decode at 128k /
+  192k / 245k goes from 21.7 / 12.9 / 9.6 to **61.6 / 51.3 / 36.9 tok/s**. Quality, against the q8_0 default: exact
+  code copies 20/20 and fact lookups 24/24 at 245k (the same), HumanEval 164 157 (q8_0: 158), perplexity +0.87 % at
+  2k context. Its per-token divergence from an f16 cache is higher than q8_0's, so it is an option for long-context
+  work, not the default. `MIRAI_CTV` sets the V type separately (a mixed pair needs an engine built with
+  `GGML_CUDA_FA_ALL_QUANTS`).
+- **Faster K/V tile loads** in the tensor-core attention kernel (bit-identical output for q8_0, the default).
+
 ## bundle-20261015 (images on Windows, images from agent tools)
 
 Same model file. New engine binaries (engine commit `de2104665`).

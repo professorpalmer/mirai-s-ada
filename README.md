@@ -220,7 +220,7 @@ file. This project did not measure the vector on the suite.
 | Variable | Default | Function |
 | --- | --- | --- |
 | `MIRAI_CTX` | 262144 | context window |
-| `MIRAI_CTK` | q8_0 | K/V cache type |
+| `MIRAI_CTK` / `MIRAI_CTV` | q8_0 / same as K | K/V cache type. `q3_0` (bundle-20261016 or newer): 2.9x the context in VRAM, decode at 245k 9.6 -> 36.9 tok/s on an RTX 4070, copies and lookups at 245k the same as q8_0, HumanEval 157 (q8_0 158); a long-context option, not the default. `MIRAI_CTV` sets V separately (mixed pairs need `GGML_CUDA_FA_ALL_QUANTS`) |
 | `MIRAI_TIER` | 1 | 0 = all-VRAM cache (then a 64k window) |
 | `MIRAI_KV_VRAM_CELLS` | auto | sets a fixed VRAM line |
 | `MIRAI_SPARSE` | 0 | 1 = sparse reads past the VRAM line: each decode step reads the system-RAM K/V pages with the highest score bound (at least 12,288 positions or 1/8 of the RAM part, plus the last 1,024) and skips the rest. 192k decode 11.7 -> 16.2-17.0 tok/s on an RTX 4070, exact copies and fact lookups at 160k-245k the same as the full read; the bounds take about 166 MiB of VRAM (a line about 5k positions shorter). Engine bundle-20261014 or newer |
