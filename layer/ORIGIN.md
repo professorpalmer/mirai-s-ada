@@ -19,3 +19,8 @@ helpers and caps at 6 cards. To be offered back to the public layer with its own
 `"prefill_only": true`), plus their tests as `tests/test_slot_cache.py`. The hooks are the same as in Bonsai; the
 Mirai changes above stay as they are. The module still reads `BONSAI_SLOT_SAVE_PATH`; the launcher sets it from
 `MIRAI_SLOT_SAVE_PATH` for the layer process only. Off when `MIRAI_SLOT_SAVE_PATH` is not set.
+
+2026-10-17 (stray closing tags): `stray_tags.py` and its hooks in `bonsai_layer.py` remove stray closing tags
+(`</think>`, `</parameter>`, `</function>`, `</tool_call>`) that the model can print after an answer when the
+prompt has a tool block, thinking is off and the prompt is long. Only answers without tool calls, never inside a code
+fence; `"strip_stray_tags": false` turns it off for a request. Generic, to be offered back to the Bonsai layer.

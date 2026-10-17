@@ -15,6 +15,8 @@ calls one of the client's own tools. The client sees one ordinary response.
   - the internal transcript is attached as "interpreter_trace" (runs, exit codes) for auditing
   - streaming requests get the same loop: reasoning and answer tokens are relayed as they arrive, the
     run_python calls are withheld and executed, and the stream continues with the next round
+  - stray closing tags after an answer without tool calls ("</tool_call>", "</think>" and the rest) are removed
+    (layer/stray_tags.py); "strip_stray_tags": false turns this off for a request
 Everything else (other paths, auth header) is forwarded verbatim.
 """
 import argparse
@@ -37,6 +39,7 @@ import apicards_v2 as apicards  # noqa: E402  (E9b: v2 docstring cards adopted)
 import apilint  # noqa: E402
 import example_check  # noqa: E402
 import slot_cache  # noqa: E402  (#138 T1-c: saved conversations on disk)
+import stray_tags  # noqa: E402  (stray closing tags after the answer)
 
 TOOL_NAME = "run_python"
 TOOL = {"type": "function", "function": {
@@ -268,6 +271,8 @@ class Proxy(http.server.BaseHTTPRequestHandler):
     round_note = False    # default for "round_note": the E19 countdown from the 8th tool round (off until measured)
     input_file = True     # default for "input_file": the user's text as input.txt for run_python (E12: adopted)
     slots = None          # slot_cache.SlotCache when BONSAI_SLOT_SAVE_PATH is set (saved conversations on disk)
+    strip_stray_tags = True   # default for "strip_stray_tags": remove stray closing tags after an answer
+    _strip_tags = False   # this request: set in do_POST
     protocol_version = "HTTP/1.1"
 
     def log_message(self, fmt, *a):
@@ -465,6 +470,8 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             self._relay(r)
 
     def _relay(self, r):
+        if self._strip_tags and "event-stream" in (r.headers.get("Content-Type") or ""):
+            return self._relay_filtered(r)
         try:
             at_boundary = True                     # a comment may only go between two SSE events
             for chunk in self._keepalive_chunks(r):
@@ -477,6 +484,59 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                 self.wfile.flush()
                 at_boundary = chunk.endswith(b"\n\n") or chunk.endswith(b"\r\n\r\n")
         except (BrokenPipeError, ConnectionResetError):
+            pass
+        finally:
+            r.close()
+
+    def _relay_filtered(self, r):
+        """_relay with the stray-tag filter: the stream is read in lines, the content deltas go through
+        stray_tags.SseFilter, all other lines go out unchanged. A held delta event is not sent (and its blank line
+        is not sent); held text goes out in the next content event, or in one added event before the finish event."""
+        flt = stray_tags.SseFilter()
+        at_boundary, skip_blank = True, False      # a comment may only go between two SSE events
+        try:
+            for line in self._keepalive_chunks(r, lines=True):
+                if line is None:
+                    if at_boundary:
+                        self.wfile.write(b": keep-alive\n\n")
+                        self.wfile.flush()
+                    continue
+                text = line.rstrip(b"\r\n")
+                if not text.strip():
+                    at_boundary = True
+                    if skip_blank:
+                        skip_blank = False
+                        continue
+                    self.wfile.write(line)
+                    self.wfile.flush()
+                    continue
+                skip_blank = False
+                out = [line]
+                if text.startswith(b"data:"):
+                    payload = text[5:].strip()
+                    if payload == b"[DONE]":
+                        out = [b"data: " + p + b"\n\n" for p in flt.close()] + [line]
+                    else:
+                        try:
+                            ev = json.loads(payload)
+                        except ValueError:
+                            ev = None
+                        if isinstance(ev, dict):
+                            before, cur = flt.event(ev, payload)
+                            out = [b"data: " + p + b"\n\n" for p in before]
+                            if cur is None:
+                                skip_blank = True
+                            else:
+                                out.append(line if cur is payload else b"data: " + cur + (line[len(text):] or b"\n"))
+                for chunk in out:
+                    self.wfile.write(chunk)
+                self.wfile.flush()
+                if out:
+                    at_boundary = out[-1].endswith(b"\n\n")
+            for p in flt.close():                  # the server closed the stream without a finish event or [DONE]
+                self.wfile.write(b"data: " + p + b"\n\n")
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
         finally:
             r.close()
@@ -582,6 +642,7 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                     started = True
                 calls, held, content, reasoning, template = {}, [], [], [], None
                 truncated = False
+                flt = stray_tags.SseFilter() if self._strip_tags else None   # per round; stops at a tool call
                 with r:
                     for line in self._keepalive_chunks(r, lines=True):
                         if line is None:
@@ -608,6 +669,9 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                                 total[k] += ev["usage"].get(k, 0) or 0
                             continue                   # replaced by one summed usage chunk at the end
                         if delta.get("tool_calls"):
+                            if flt is not None:    # a tool round: the held content goes out unchanged
+                                for p in flt.tools():
+                                    send(b"data: " + p)
                             for tc in delta["tool_calls"]:
                                 c = calls.setdefault(tc.get("index", 0), {"id": "", "type": "function", "function": {"name": "", "arguments": ""}})
                                 c["id"] = tc.get("id") or c["id"]
@@ -619,13 +683,27 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                         if ch.get("finish_reason") == "length":
                             truncated = True       # cut by max_tokens: any held call is half-written
                         if ch.get("finish_reason") == "tool_calls" or (calls and not ev.get("choices")):
+                            if flt is not None:
+                                for p in flt.tools():
+                                    send(b"data: " + p)
                             held.append(line)      # the finish chunk (and a trailing usage chunk) of a tool round
                             continue
                         if isinstance(delta.get("content"), str):
-                            content.append(delta["content"])
+                            content.append(delta["content"])   # the round's own text stays unchanged in the history
                         if isinstance(delta.get("reasoning_content"), str):
                             reasoning.append(delta["reasoning_content"])
+                        if flt is not None:
+                            before, cur = flt.event(ev, payload)
+                            for p in before:
+                                send(b"data: " + p)
+                            if cur is None:        # held content only
+                                continue
+                            if cur is not payload:
+                                line = b"data: " + cur
                         send(line)
+                if flt is not None:                # the stream ended without a finish event: send the held text
+                    for p in flt.close():
+                        send(b"data: " + p)
                 ordered = [calls[i] for i in sorted(calls)]
                 ours = [c for c in ordered if c["function"]["name"] == TOOL_NAME]
                 if truncated or not ours or len(ours) != len(ordered) or rnd == self.max_rounds:
@@ -658,6 +736,13 @@ class Proxy(http.server.BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             return
 
+    def _filtered(self, status, ctype, data):
+        """A non-stream answer that the layer forwards without its own loop, with the stray-tag filter applied.
+        The bytes stay the same when the filter is off, the status is not 200, or nothing is removed."""
+        if self._strip_tags and status == 200 and "json" in (ctype or ""):
+            data = stray_tags.filter_response_bytes(data)[0]
+        return status, ctype, data
+
     def _reply(self, status, ctype, data):
         self.send_response(status)
         self.send_header("Content-Type", ctype)
@@ -683,6 +768,7 @@ class Proxy(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         self._slots_ok = False   # set by _with_slots only (after the key check); a keep-alive connection reuses the handler
         self._prefill_only = False
+        self._strip_tags = False   # set below for chat requests only
         raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
         if not self.path.rstrip("/").endswith("/chat/completions"):
             return self._reply(*self._forward("POST", raw))
@@ -694,6 +780,8 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             given = self.headers.get("Authorization", "")
             if not hmac.compare_digest(given.encode("utf-8", "replace"), ("Bearer " + self.api_key).encode()):
                 return self._reply(*self._forward("POST", raw))   # let the server produce its own 401; do no work here
+        want_strip = body.pop("strip_stray_tags", None)   # the server does not get this key
+        self._strip_tags = self.strip_stray_tags if want_strip is None else bool(want_strip)
         # Read ahead (#138 T1-d): "prefill_only": true reads the prompt into the server and saves it (the saved-conversation
         # cache), and answers with a short JSON object instead of generating. The request takes the normal path (cards,
         # notes, tools), so the saved tokens are the ones the later real request will render. It answers when the read is
@@ -709,6 +797,7 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                 and body.get("code_interpreter") is not True:
             for k in ("code_interpreter", "input_file", "repair_note", "finish_note", "api_cards", "api_lint", "round_note"):
                 body.pop(k, None)
+            self._strip_tags = False   # this route changes nothing (and has no tool block, the measured cause)
             if body.get("stream"):
                 return self._with_slots(body, lambda: self._stream("POST", json.dumps(body).encode()))
             return self._with_slots(body, lambda: self._reply(*self._forward("POST", json.dumps(body).encode())))
@@ -764,9 +853,9 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                 return self._stream_interpreter(body, client_tools, with_input, extra)
             return self._stream("POST", json.dumps(body).encode())
         if not enabled:
-            return self._reply(*self._forward("POST", json.dumps(body).encode()))
+            return self._reply(*self._filtered(*self._forward("POST", json.dumps(body).encode())))
         if any(t.get("function", {}).get("name") == TOOL_NAME for t in client_tools):
-            return self._reply(*self._forward("POST", json.dumps(body).encode()))   # client owns that name
+            return self._reply(*self._filtered(*self._forward("POST", json.dumps(body).encode())))   # client owns that name
         body["tools"] = client_tools + [tool_spec(with_input)]
         msgs = list(body["messages"])
         trace, usage_total = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -814,6 +903,10 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             if truncated or not ours or len(ours) != len(calls):   # final answer, or a client tool call: hand back
                 if ours:                               # mixed: drop our calls, keep the client's
                     m["tool_calls"] = [c for c in calls if c["function"]["name"] != TOOL_NAME]
+                if self._strip_tags and not calls:     # only an answer without tool calls
+                    n = stray_tags.filter_message(m)
+                    if n:
+                        info["stray_tags_removed"] = n
                 resp["usage"] = usage_total
                 resp["interpreter_trace"] = trace
                 resp["layer"] = info
@@ -846,6 +939,8 @@ if __name__ == "__main__":
     ap.add_argument("--repair-note", action="store_true", help="append a fixed sentence to failing tool results by default")
     ap.add_argument("--round-note", action="store_true", help="E19: append a round countdown to tool results from the 8th tool round")
     ap.add_argument("--no-input-file", action="store_true", help="do not give run_python the user's text as input.txt")
+    ap.add_argument("--no-strip-stray-tags", action="store_true",
+                    help="do not remove stray closing tags after an answer by default")
     a = ap.parse_args()
     Proxy.api_key = os.environ.get("BONSAI_LAYER_KEY") or None
     Proxy.upstream, Proxy.max_rounds = a.upstream, a.max_rounds
@@ -856,6 +951,7 @@ if __name__ == "__main__":
     Proxy.round_note = a.round_note
     Proxy.finish_note = not a.no_finish_note
     Proxy.example_check = not a.no_example_check
+    Proxy.strip_stray_tags = not a.no_strip_stray_tags
     Proxy.slots = slot_cache.SlotCache.from_env(a.upstream)
     if Proxy.slots:
         print(f"bonsai layer: saved conversations in {Proxy.slots.folder} ({len(Proxy.slots.index)} on disk)", flush=True)

@@ -111,6 +111,18 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261017c (clean answers with tools and thinking off)
+
+Same model file and engine (`41aa200a0`). Only the layer changes.
+
+- **Stray closing tags are removed.** With a tool block in the prompt (the layer's `run_python` tool, or a client's
+  own tools), thinking off and a long prompt, the model could end a correct answer with `</parameter></function>
+  </tool_call>` (20k) or `</think>` and then the answer again (64k). The layer now removes such a trailing run of
+  closing tags, and cuts at a stray `</think>` line, in streamed and non-streamed answers without tool calls (never
+  inside a code fence). Measured: the 20k and 64k cases give the clean answer; HumanEval 164 through the layer,
+  thinking off: 153 with and without the filter, no task changed; greedy answers of other requests unchanged.
+  `"strip_stray_tags": false` turns it off for a request.
+
 ## bundle-20261017b (saved conversations, automatic with the layer)
 
 Same model file and engine (`41aa200a0`). Only the layer and the launcher change.
