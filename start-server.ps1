@@ -15,6 +15,7 @@
 #   MIRAI_SPARSE=1         sparse reads past the VRAM line (192k decode 11.7 -> 17 tok/s; the line ~5k positions shorter)
 #   MIRAI_MMPROJ=file      images (vision projector, encoder on the CPU; MIRAI_MMPROJ_GPU=1 puts it on the card)
 #   MIRAI_CTK=q3_0         long-context cache (2.9x the positions in VRAM, 245k decode 3.8x; MIRAI_CTV for a separate V type)
+#   MIRAI_SLOT_SAVE_PATH=dir  saved conversations: POST /slots/0?action=save|restore {"filename": ...} (files not removed automatically)
 $ErrorActionPreference = 'Stop'
 # Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
 # common one) silently changes the server; the launcher prints them all at start.
@@ -401,12 +402,20 @@ try {
         Write-Host "       close it or set it to the integrated GPU (Settings > System > Display > Graphics), then restart."
     }
 } catch { }
+# Saved conversations: an absolute folder, because the server starts in $Bin and would read a relative one from there.
+# A restored conversation that continues reads only its new turn.
+[string[]]$SlotArgs = @()
+if ($env:MIRAI_SLOT_SAVE_PATH) {
+    $SlotDir = (New-Item -ItemType Directory -Force -Path $env:MIRAI_SLOT_SAVE_PATH).FullName
+    $SlotArgs = @('--slot-save-path', $SlotDir)
+    Write-Host "slots  save / restore folder: $SlotDir (POST /slots/0?action=save|restore; files are not removed automatically)"
+}
 Set-Location $Bin
 # Everything after this line is the server's command line, as one array (printed into the stderr file for receipts).
 # The launcher sizes the GPU memory itself (the VRAM line). The engine's own automatic fit has nothing to adjust with
 # every layer set, and it only printed "failed to fit params to free device memory ... abort". Turn it off.
 [string[]]$FitArgs = if ($Help -match '--fit ') { @('--fit', 'off') } else { @() }
-[string[]]$ServerArgs = @() + $TierArgs + $RamArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + $FitArgs + $MmprojArgs + @(
+[string[]]$ServerArgs = @() + $SlotArgs + $TierArgs + $RamArgs + $SpecArgs + $BsArgs + $BudgetMsgArgs + $HarnessArgs + $LogArgs + $MaskArgs + $FitArgs + $MmprojArgs + @(
     '--reasoning-budget', "$ThinkBudget",
     '-n', '24576',
     '-m', $Model,

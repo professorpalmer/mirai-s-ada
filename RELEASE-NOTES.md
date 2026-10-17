@@ -111,6 +111,29 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261017 (saved conversations)
+
+Same model file. New engine binaries (engine commit `41aa200a0`). The default does not change.
+
+- **`MIRAI_SLOT_SAVE_PATH=<folder>`: save a conversation, and continue it after a restart without a new read.**
+  `POST /slots/0?action=save` with `{"filename": "name.bin"}` writes the K/V state of the conversation (both tiers)
+  and, in a second file `name.bin.draft`, the state of the draft block. `action=restore` reads both back. The next
+  turn then reads only its new tokens (a 5.5k-token turn at 128k: 13.3 s, in memory 13.2 s). RTX 4070, 262k window, q8_0
+  cache:
+
+  | Conversation | Restore + new turn | Read it again | File |
+  | --- | --- | --- | --- |
+  | 64k | 0.8 + 0.4 s | 73 s | 2.3 GB |
+  | 128k | 1.6 + 0.6 s | 195 s | 4.5 GB |
+  | 245k | 9.0 + 1.6 s | 524 s | 8.3 GB |
+
+  The answers after a restore are identical to the answers without a restart. Without the `.draft` file the
+  restore still works and the server prints a warning; the draft block then reads the conversation again. A
+  relative folder is made absolute by the launcher. The server does not remove files: delete old files yourself.
+- **The CUDA pool grows safely.** A pool growth that fails for a moment under Windows (seen on an 8 GB card after a
+  restore) is undone and tried again, with a message, in place of a crash. `GGML_CUDA_POOL_RESERVE_MIB=n` reserves
+  the pool at start.
+
 ## bundle-20261016 (a long-context cache option: q3_0)
 
 Same model file. New engine binaries (engine commit `70b9db679`). The default does not change.
