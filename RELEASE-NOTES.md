@@ -111,6 +111,19 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261017b (saved conversations, automatic with the layer)
+
+Same model file and engine (`41aa200a0`). Only the layer and the launcher change.
+
+- **With the layer on and `MIRAI_SLOT_SAVE_PATH` set, saved conversations are automatic.** The layer saves each
+  prompt of 16k+ tokens (and again when it grows by 8k) and, after a server restart, restores the longest saved
+  prefix before the request, so the request reads only its new tokens. RTX 4070, default recipe: a 128k document
+  asked after a restart answers in **6.7 s** (restore 2.2 s, 39 new tokens), against 199 s cold, with the same
+  answer. Files are named `lc-<hash>`; the layer removes its own files past 20 GB, oldest first, and no other file.
+- **Read ahead:** a chat request with `"prefill_only": true` reads the prompt and saves it, and answers with a short
+  JSON object instead of text. Send it when a big file is attached, before the question.
+- With the cache off, the layer's answers are unchanged (greedy hashes identical).
+
 ## bundle-20261017 (saved conversations)
 
 Same model file. New engine binaries (engine commit `41aa200a0`). The default does not change.

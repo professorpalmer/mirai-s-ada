@@ -15,7 +15,8 @@
 #   MIRAI_SPARSE=1         sparse reads past the VRAM line (192k decode 11.7 -> 17 tok/s; the line ~5k positions shorter)
 #   MIRAI_MMPROJ=file      images (vision projector, encoder on the CPU; MIRAI_MMPROJ_GPU=1 puts it on the card)
 #   MIRAI_CTK=q3_0         long-context cache (2.9x the positions in VRAM, 245k decode 3.8x; MIRAI_CTV for a separate V type)
-#   MIRAI_SLOT_SAVE_PATH=dir  saved conversations: POST /slots/0?action=save|restore {"filename": ...} (files not removed automatically)
+#   MIRAI_SLOT_SAVE_PATH=dir  saved conversations: the layer saves long prompts there and restores them (lc- files, 20 GB cap);
+#                          POST /slots/0?action=save|restore {"filename": ...} also works (those files are not removed)
 $ErrorActionPreference = 'Stop'
 # Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
 # common one) silently changes the server; the launcher prints them all at start.
@@ -336,7 +337,7 @@ if ($Spec -gt 0) {
     Write-Host "       To turn it on: Remove-Item Env:MIRAI_SPEC (or open a new window), then start again."
 }
 # the launcher sets these itself, and they stay in the window after a run: not the user's settings
-$Own = @('BONSAI_LAYER_KEY', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'LLAMA_ARG_CHECKPOINT_EVERY_NT', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
+$Own = @('BONSAI_LAYER_KEY', 'BONSAI_SLOT_SAVE_PATH', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'LLAMA_ARG_CHECKPOINT_EVERY_NT', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
          'LLAMA_MTP_DRAFT_UBATCH', 'GGML_MIRAI_PREFILL_PLANES', 'GGML_MIRAI_LEVELS_MIB')
 $Listed = @($UserEnv | Where-Object { $_.Name -notin $Own -and $_.Value })
 if ($Listed.Count -gt 0) {
@@ -346,6 +347,15 @@ if ($Listed.Count -gt 0) {
 Write-Host "listen 0.0.0.0:$Port  think=$Think effort=$Effort budget=$ThinkBudget  harness-proofing=$($HarnessArgs.Count -gt 0)  backend-sampling=$($BsArgs.Count -gt 0)"
 Write-Host "prefill ubatch $UBatch  mask=$(if ($Packed) { 'packed 1-bit' } else { 'f16' })  planes=$($env:GGML_MIRAI_PREFILL_PLANES)  level chunk $LevelsMiB MiB"
 Write-Host "api    Authorization: Bearer <artifacts/api_key.txt>"
+
+# Saved conversations: an absolute folder, because the server starts in $Bin and would read a relative one from there.
+# A restored conversation that continues reads only its new turn. Resolve it before the layer
+# starts: the layer (layer\slot_cache.py) and the server must use the same folder.
+[string[]]$SlotArgs = @(); $SlotDir = $null
+if ($env:MIRAI_SLOT_SAVE_PATH) {
+    $SlotDir = (New-Item -ItemType Directory -Force -Path $env:MIRAI_SLOT_SAVE_PATH).FullName
+    $SlotArgs = @('--slot-save-path', $SlotDir)
+}
 
 # ---- The layer (MIRAI_LAYER=0 turns it off) -----------------------------------------------------------------
 # API cards, API check and the sandboxed Python tool in front of llama-server on the same port clients use.
@@ -371,13 +381,25 @@ if ($Layer) {
     $InnerPort = if ($env:MIRAI_INNER_PORT) { [int]$env:MIRAI_INNER_PORT } else { $Port + 10000 }
     $ListenHost = '127.0.0.1'; $ListenPort = $InnerPort
     $env:BONSAI_LAYER_KEY = $ApiKey
+    # Saved conversations: the layer reads BONSAI_SLOT_SAVE_PATH (as BONSAI_LAYER_KEY). Set it from MIRAI_SLOT_SAVE_PATH
+    # for the layer process only; a value left in this window from a Bonsai run must not turn the cache on.
+    $PrevSlotEnv = $env:BONSAI_SLOT_SAVE_PATH
+    if ($SlotDir) { $env:BONSAI_SLOT_SAVE_PATH = $SlotDir } else { Remove-Item Env:BONSAI_SLOT_SAVE_PATH -ErrorAction SilentlyContinue }
     # MIRAI_ROUND_NOTE=1: the E19 round countdown on tool results (off until measured; DECISIONS 2026-10-06 00:40)
     [string[]]$LayerFlags = @(); if ($env:MIRAI_ROUND_NOTE -eq '1') { $LayerFlags += '--round-note' }
     $LayerProc = Start-Process python -PassThru -WindowStyle Hidden -ArgumentList (@(
         ('"' + (Join-Path $LayerDir 'bonsai_layer.py') + '"'), '--host', '0.0.0.0', '--port', "$Port",
         '--upstream', "http://127.0.0.1:$InnerPort") + $LayerFlags)
     Remove-Item Env:BONSAI_LAYER_KEY
+    if ($PrevSlotEnv) { $env:BONSAI_SLOT_SAVE_PATH = $PrevSlotEnv } else { Remove-Item Env:BONSAI_SLOT_SAVE_PATH -ErrorAction SilentlyContinue }
     Write-Host "layer  on: clients use :$Port (API cards, API check, sandboxed Python); llama-server on 127.0.0.1:$InnerPort"
+}
+if ($SlotDir) {
+    if ($Layer) {
+        Write-Host "slots  saved conversations in $SlotDir (the layer saves prompts of 16k+ tokens and restores them; lc- files, oldest removed past 20 GB)"
+    } else {
+        Write-Host "slots  save / restore folder: $SlotDir (POST /slots/0?action=save|restore; files are not removed automatically)"
+    }
 }
 # MIRAI_LOG_FILE=path: the server also writes its log there (for hidden/background launches; the console still gets it)
 [string[]]$LogArgs = @()
@@ -402,14 +424,6 @@ try {
         Write-Host "       close it or set it to the integrated GPU (Settings > System > Display > Graphics), then restart."
     }
 } catch { }
-# Saved conversations: an absolute folder, because the server starts in $Bin and would read a relative one from there.
-# A restored conversation that continues reads only its new turn.
-[string[]]$SlotArgs = @()
-if ($env:MIRAI_SLOT_SAVE_PATH) {
-    $SlotDir = (New-Item -ItemType Directory -Force -Path $env:MIRAI_SLOT_SAVE_PATH).FullName
-    $SlotArgs = @('--slot-save-path', $SlotDir)
-    Write-Host "slots  save / restore folder: $SlotDir (POST /slots/0?action=save|restore; files are not removed automatically)"
-}
 Set-Location $Bin
 # Everything after this line is the server's command line, as one array (printed into the stderr file for receipts).
 # The launcher sizes the GPU memory itself (the VRAM line). The engine's own automatic fit has nothing to adjust with

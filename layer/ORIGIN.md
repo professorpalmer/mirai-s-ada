@@ -13,3 +13,9 @@ cosmetic and not done.
 names looked up on a class or called on a fresh stdlib instance that the class does not have (with idiom hints), and
 apicards triggers email, email.policy and email.parser on MIME requests, orders the task family before the generic
 helpers and caps at 6 cards. To be offered back to the public layer with its own measurement if the MIME family moves.
+
+2026-10-17 (layer cache): ported from the Bonsai repo `slot_cache.py` and its hooks in
+`bonsai_layer.py` from commits 8689a2a (#157, saved conversations on disk) and bad2d9a (#159, read ahead with
+`"prefill_only": true`), plus their tests as `tests/test_slot_cache.py`. The hooks are the same as in Bonsai; the
+Mirai changes above stay as they are. The module still reads `BONSAI_SLOT_SAVE_PATH`; the launcher sets it from
+`MIRAI_SLOT_SAVE_PATH` for the layer process only. Off when `MIRAI_SLOT_SAVE_PATH` is not set.
