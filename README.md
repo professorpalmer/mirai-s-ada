@@ -22,6 +22,10 @@ This serve adds these items:
 - **Many tools cost no decode speed** (bundle-20261008c): the server copied the tool-call grammar with a slow
   search on each draft step. 107 tools at 63k: 36.7 -> 45.0 tok/s on a plan-like answer, 59.6 -> 70.4 on a request
   with three tool calls, same output.
+- **Saved conversations** (bundle-20261017b): with `MIRAI_SLOT_SAVE_PATH` set, the layer saves the K/V cache of
+  each long prompt to disk (the VRAM part, the system-RAM part and the draft block's state). After a restart it loads
+  it back and reads only the new turn: a 245k-token conversation is back in ~10 s instead of a 524 s re-read, and a
+  128k document answers in 6.7 s after a restart (199 s cold). The answers are the same as without the restart.
 - What we took from [syv-ai/HyperQwen](https://github.com/syv-ai/HyperQwen) and what we measured:
   [`docs/HYPERQWEN.md`](docs/HYPERQWEN.md).
 
@@ -62,12 +66,16 @@ The table compares alesha-pro's reference fork with this serve. Both ran on the 
 | long exact-work suite, 37 tasks, raw / through the layer | 13 / 30 (on the reference fork) | **18 / 28** (12 rescues, 2 losses); coding family over two seed sets 7 / **12** of 24, at effort "low" 6 / 8 of 12 |
 | AppWorld test_normal, 168 tasks, ReAct code agent (task / scenario goal completion) | | **88.7 / 73.2** on this one 12 GB card; alesha-pro measured 89.9 / 75.0 on Mirai's vLLM plugin (4x RTX 3090), BF16 95.8 / 91.1 |
 | apps that send `effort: "high"` | template error on each request | answered (changed to medium) |
+| a 245k-token conversation after a server restart (restore + next turn) | - (not measured; 64k window) | **10.5 s** (restore 9.0 s + 1.6 s; a re-read takes 524 s), since bundle-20261017b |
+| a 128k-token document asked after a restart, through the layer | - (not measured; 64k window) | **6.7 s** (199 s cold), automatic with `MIRAI_SLOT_SAVE_PATH`, since bundle-20261017b |
 
 The receipts for each row are in `receipts/mirai-port/` and `bench/`. `docs/REPORT.md` and `docs/PREFILL.md` tell how
 this project got each number and what did not work. The numbers are from 2026-10-05 and 2026-10-06. The
 decode-by-depth numbers are from the evening of 10-06 (`receipts/mirai-port/decode_by_depth.log`). The GDDR6X memory
 was at stock clocks. The display was on the integrated GPU of the CPU (refer to
 [Get more positions into VRAM](#get-more-positions-into-vram)).
+
+![Saved conversations: a 245k-token conversation back in 10.5 s instead of a 524 s re-read; a 128k document answers in 6.7 s after a restart instead of 199 s](docs/img/saved-conversations.png)
 
 ![Built so the agent loop finishes: window, depth, effort words, output caps, forced close, API check, sandboxed Python, effort low](docs/img/agentic.png)
 
