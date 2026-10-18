@@ -387,7 +387,7 @@ if ($Layer) {
     $PrevSlotEnv = $env:BONSAI_SLOT_SAVE_PATH
     if ($SlotDir) { $env:BONSAI_SLOT_SAVE_PATH = $SlotDir } else { Remove-Item Env:BONSAI_SLOT_SAVE_PATH -ErrorAction SilentlyContinue }
     $PrevAfterEnv = $env:BONSAI_SLOT_CACHE_AFTER
-    if ($env:MIRAI_SLOT_CACHE_AFTER -eq '1') { $env:BONSAI_SLOT_CACHE_AFTER = '1' } else { Remove-Item Env:BONSAI_SLOT_CACHE_AFTER -ErrorAction SilentlyContinue }
+    $env:BONSAI_SLOT_CACHE_AFTER = $(if ($env:MIRAI_SLOT_CACHE_AFTER -eq '1') { '1' } else { '0' })   # explicit: the layer's own default is 1
     # MIRAI_ROUND_NOTE=1: the E19 round countdown on tool results (off until measured; DECISIONS 2026-10-06 00:40)
     [string[]]$LayerFlags = @(); if ($env:MIRAI_ROUND_NOTE -eq '1') { $LayerFlags += '--round-note' }
     $LayerProc = Start-Process python -PassThru -WindowStyle Hidden -ArgumentList (@(

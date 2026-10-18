@@ -111,6 +111,29 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261018b (delta saves: a save writes only what is new)
+
+Same model file. Engine `cc1c1391b` (`5f93f07c0` + delta slot saves). Layer: delta saves.
+
+- **A save of a conversation now writes only the tokens since the last save** (a delta), not the whole conversation.
+  - A restore loads the last full save and then each delta.
+  - Every 8 deltas the next save is a full save again.
+  - This works for both kinds of save: the save before the request (the default) and the opt-in save after the answer.
+- **Why it matters:** a full save of a long Mirai conversation is ~6 GB. On a drive that cannot keep its write speed, one
+  full save took 227 s for a 174k-token conversation in our test; a delta took 0.2-0.6 s.
+- **Exact:** a chain restore (a full save + 4 deltas) gives the same answer, the same tokens read and the same cached
+  tokens as a full-file restore, at 20k and 174k tokens.
+- Each delta also holds the model's fixed recurrent state (~150 MiB).
+- `MIRAI_SLOT_CACHE_AFTER=1` (save after the answer) stays opt-in: in our test, the turn after the forced full save
+  waited for it.
+- Checks on the zip:
+  - the bundle smoke test 5/5 the same;
+  - the one-token repro 10/10;
+  - a saved conversation restored after a restart;
+  - a chain restore equal to a full restore;
+  - the default launcher makes deltas;
+  - 0 CUDA errors.
+
 ## bundle-20261018 (the next turn reuses the state after the answer)
 
 Same model file. Engine `5f93f07c0` (`41aa200a0` + one server change). Layer: one opt-in setting.
