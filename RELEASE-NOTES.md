@@ -111,6 +111,26 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261018 (the next turn reuses the state after the answer)
+
+Same model file. Engine `5f93f07c0` (`41aa200a0` + one server change). Layer: one opt-in setting.
+
+- **A speculative draft stops at the end of the answer.** In a long conversation, the lookup drafter could continue
+  a draft past `<|im_end|>`, because the history makes the next `<|im_start|>` line easy to predict. The server
+  accepted those tokens into the conversation state, so the next turn could not reuse the state after the answer. It
+  read the answer again from an older checkpoint. Now the draft stops at the end token.
+  - Measured on a 20k-token conversation, 10 turns: the next turn reuses the whole state on 9 of 9 turns.
+  - The server no longer checks draft tokens after the end of an answer.
+- **Opt-in: save after the answer** (`MIRAI_SLOT_CACHE_AFTER=1`, with `MIRAI_SLOT_SAVE_PATH` and the layer).
+  - The layer saves a long conversation after the answer, not before the request, so the answer does not wait for
+    the save.
+  - It works when the next turn renders the answer with the same tokens: thinking off, or a client that sends the
+    reasoning back. The layer tests this per conversation and keeps the save before the request when the test fails.
+  - On the sister Bonsai serve (RTX 4070, a 30-turn session with restarts): restart turns -56 %, the session -12 %,
+    the same answers. But a turn sent right after a slow save waits for it, so it is not the default.
+- Checks on the zip: the bundle smoke test 5/5 the same; the one-token repro 10/10; a saved conversation restored
+  after a restart; the opt-in setting turns on through the launcher and saves after the answer; 0 CUDA errors.
+
 ## bundle-20261017d (no answer written twice with thinking off)
 
 Same model file and engine (`41aa200a0`). Only the layer changes.
