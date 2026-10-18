@@ -782,6 +782,14 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                 return self._reply(*self._forward("POST", raw))   # let the server produce its own 401; do no work here
         want_strip = body.pop("strip_stray_tags", None)   # the server does not get this key
         self._strip_tags = self.strip_stray_tags if want_strip is None else bool(want_strip)
+        # Thinking off: the template already closed the think block, so a "</think>" line in the answer is always stray.
+        # Stop there instead of letting the model write its answer again up to max_tokens (64k: the list a second time,
+        # then the filter removed it after the cost). Only when the request turns thinking off itself.
+        if self._strip_tags and (body.get("chat_template_kwargs") or {}).get("enable_thinking") is False:
+            stops = body.get("stop") or []
+            stops = [stops] if isinstance(stops, str) else list(stops)
+            if "\n</think>" not in stops:
+                body["stop"] = stops + ["\n</think>"]
         # Read ahead (#138 T1-d): "prefill_only": true reads the prompt into the server and saves it (the saved-conversation
         # cache), and answers with a short JSON object instead of generating. The request takes the normal path (cards,
         # notes, tools), so the saved tokens are the ones the later real request will render. It answers when the read is

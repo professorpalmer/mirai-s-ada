@@ -111,6 +111,17 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261017d (no answer written twice with thinking off)
+
+Same model file and engine (`41aa200a0`). Only the layer changes.
+
+- **A request with thinking off now stops at a stray `</think>` line.** With thinking off the template has already
+  closed the think block, so such a line is always stray. Before, the model could write its answer a second time up
+  to `max_tokens` after it (bundle-20261017c removed that text, but the tokens were still spent). Now the layer adds
+  `"
+</think>"` to the request's `stop` list (merged with the client's own list). Measured: the 64k case ends with
+  finish `stop` instead of `length`; HumanEval 164 through the layer, thinking off: 153, the same, no task changed.
+
 ## bundle-20261017c (clean answers with tools and thinking off)
 
 Same model file and engine (`41aa200a0`). Only the layer changes.

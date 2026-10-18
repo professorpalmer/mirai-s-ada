@@ -294,6 +294,23 @@ def test_end_to_end_tool_rounds():
     print("end to end tool rounds: content of a round with tool calls unchanged, final answer filtered: ok")
 
 
+def test_think_stop():
+    UPSTREAM.update(content=CLEAN, tool_round=False)
+    off = {"enable_thinking": False}
+    for stream in (False, True):
+        for ct in (False, True):
+            SEEN.clear(); call(stream, ct, chat_template_kwargs=off)
+            assert SEEN and all("\n</think>" in (b.get("stop") or []) for b in SEEN), (stream, ct, SEEN)
+    SEEN.clear(); call(False, False, chat_template_kwargs=off, stop="END")
+    assert SEEN[0]["stop"] == ["END", "\n</think>"], SEEN[0].get("stop")
+    SEEN.clear(); call(False, False, chat_template_kwargs=off, stop=["A", "\n</think>"])
+    assert SEEN[0]["stop"] == ["A", "\n</think>"], SEEN[0].get("stop")
+    for extra in ({"chat_template_kwargs": {"enable_thinking": True}}, {}, {"chat_template_kwargs": off, "strip_stray_tags": False}):
+        SEEN.clear(); call(False, False, **extra)
+        assert all("stop" not in b for b in SEEN), (extra, SEEN)
+    print("thinking off: stop at a stray </think> line (merged with the client's stop list); otherwise no stop added: ok")
+
+
 if __name__ == "__main__":
     test_pure()
     test_stream_every_boundary()
@@ -302,4 +319,5 @@ if __name__ == "__main__":
     test_response_bytes()
     test_end_to_end()
     test_end_to_end_tool_rounds()
+    test_think_stop()
     print("ALL OK")
