@@ -1,0 +1,57 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S quality</title>
+<!-- Quality results on the RTX 4070 12 GB, raw server and through the layer. Every number is in DATA below, each with
+     its source. Edit DATA, then run bench/render_cards.ps1. null = not measured (the card says so). -->
+<script>
+var DATA = {
+  foot: [
+    'HumanEval 164, greedy, tests run in a sandbox: medium 159 RELEASE-NOTES.md bundle-20261014; low 158 bench/humaneval/H2-low-20k; off 154 H3-off (2026-10-05/06); layer 160 receipts/mirai-port/humaneval.log L1 (bundle-20261009, 2026-10-09); layer, off 153 RELEASE-NOTES.md bundle-20261017c.',
+    'Suite: bench/ML2b (37 tasks, 2026-10-05); coding over two seed sets: bench/E18-coding-layer + bench/ML2f-coding-s5-8 (docs/research/REPORT.md 6d, 2026-10-06). K/V: receipts/mirai-port/kv_kl.log (2026-10-09).',
+    'q3_0 option: RELEASE-NOTES.md bundle-20261016. AIME and MMLU-Pro: not run on this serve (docs/research/REPORT.md section 7).'
+  ],
+  rows: [
+    { label: 'HumanEval 164', note: 'medium',
+      raw: { v: '159', unit: '/ 164' },                // RELEASE-NOTES.md bundle-20261014
+      layer: { v: '160', unit: '/ 164, example check' } }, // humaneval.log L1-layer-ec-medium (layer without the check: 158)
+    { label: 'HumanEval 164', note: 'effort "low" / thinking off',
+      raw: { v: '158 / 154' },                         // bench/humaneval/H2-low-20k, H3-off
+      layer: { v: '153', unit: 'off; low not measured' } },          // RELEASE-NOTES.md bundle-20261017c / 17d (thinking off); low through the layer: not run
+    { label: 'Exact-work suite', note: '37 tasks',
+      raw: { v: '18', unit: '/ 37' },                  // bench/ML2b/scoreboard.md
+      layer: { v: '28', unit: '/ 37' } },              // bench/ML2b/scoreboard.md (12 rescues, 2 losses)
+    { label: 'Coding family', note: '24 runs',
+      raw: { v: '7', unit: '/ 24' },                   // REPORT.md 6d: ML2b + ML2f raw
+      layer: { v: '12', unit: '/ 24' } },              // REPORT.md 6d: E18 7/12 + ML2f 5/12
+    { label: 'Computation family', note: '15 runs',
+      raw: { v: '4', unit: '/ 15' },                   // bench/ML2b/scoreboard.md (digits..weblog)
+      layer: { v: '15', unit: '/ 15' } },              // bench/ML2b/scoreboard.md
+    { label: 'q8_0 cache vs f16', note: 'same top token',
+      raw: { v: '99.64 %', unit: 'KL 0.00050' },        // kv_kl.log
+      layer: { t: 'the same cache' } },
+    { label: 'q3_0 option at 245k', note: 'copies · lookups',
+      raw: { v: '20/20 · 24/24' },                     // RELEASE-NOTES.md bundle-20261016 (the same as q8_0)
+      layer: null },
+    { label: 'AIME, MMLU-Pro',
+      raw: null,
+      layer: null }
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var body = card({
+    eyebrow: 'Quality, tests executed · RTX 4070 12 GB · q8_0 K/V',
+    title: 'The same model answers more with the layer',
+    foot: DATA.foot
+  });
+  colTable(body, [
+    { key: 'raw', name: 'Raw server', sub: 'llama-server, the defaults', color: COLOR.ref },
+    { key: 'layer', name: 'Through the layer', sub: 'API cards, API check, sandboxed Python', color: COLOR.serve, focus: true, fr: '1.15fr' }
+  ], DATA.rows);
+})();
+</script>

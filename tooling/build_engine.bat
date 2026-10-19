@@ -6,7 +6,7 @@ rem   MIRAI_CUDA_ARCH  CUDA architectures (default: native = the GPU in this mac
 rem                    RTX 4070). A list also works, e.g. set MIRAI_CUDA_ARCH=75-real;86-real;89-real
 rem   MIRAI_JOBS       parallel compile jobs (default 6; lower it when RAM runs short)
 rem   MIRAI_BUILD_DIR  build folder (default build\)
-rem Needs Visual Studio 2022 or its Build Tools (any edition) with the C++ workload, and the pip packages in README.md.
+rem Needs Visual Studio 2022 or its Build Tools (any edition) with the C++ workload, and the pip packages in docs/build/README.md.
 setlocal
 set ROOT=%~dp0..
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"

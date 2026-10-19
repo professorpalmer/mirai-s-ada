@@ -1,5 +1,7 @@
 # mirai-s-ada, first release (bundle-20261006)
 
+> Upgrade steps and the build: [docs/build](docs/build/README.md#upgrading). All documents: [README.md](README.md).
+
 Mirai S 27B (Mirai Labs' Qwen3.8-27B-S, Qwen3.8-27B in their Mirai S trellis codec, in alesha-pro's GGUF conversion and llama.cpp port,
 11.17 GB) served on an RTX 4070 12 GB with:
 
@@ -13,7 +15,7 @@ Mirai S 27B (Mirai Labs' Qwen3.8-27B-S, Qwen3.8-27B in their Mirai S trellis cod
 - the optional **layer** (exact API cards, an API check that now flags names looked up on classes and fresh
   instances, a sandboxed Python tool).
 
-Quality, measured with plans and gates frozen before results (`docs/REPORT.md`):
+Quality, measured with plans and gates frozen before results (`docs/research/REPORT.md`):
 
 - HumanEval 164, greedy, tests executed in a sandbox: **158** at medium (budget 20k or 8k: identical), 158 at
   effort "low" for 0.71x the tokens, 154 thinking off.
@@ -48,7 +50,7 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
 ## bundle-20261006c (same day, evening)
 
 - **VRAM line 45,312 -> 57,856 positions** on this card at the same 800 MiB margin, from two measured levers
-  (`receipts/mirai-port/mtp_q4_probe.log`, `docs/REPORT.md` 6e): one transient CUDA pool for the target and draft
+  (`receipts/mirai-port/mtp_q4_probe.log`, `docs/research/REPORT.md` 6e): one transient CUDA pool for the target and draft
   contexts with a 256-token draft micro-batch (188 MiB; `MIRAI_SHARED_POOL=0` reverts), and `tooling/requant_mtp.py`,
   which writes a copy of the GGUF with only the MTP draft block at Q4_0 (204 MiB; the launcher prefers the copy when
   it is in `models\`). Greedy identity 3/3 in every arm and 5/5 on the restarted product, decode unchanged
@@ -60,7 +62,7 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
 - Not changed: K/V stays q8_0 (a q4_0 cache is a knob until its quality on this model is measured); the MTP block
   stays the default drafter (DFlash remains the `MIRAI_SPEC_TYPE=dflash` mode).
 - **The launcher supervises the server.** One 180k-token request ended llama-server with an assert-style fail-fast
-  once on the new defaults and did not reproduce in four replays (`docs/REPORT.md` 6e). An aborted server is now
+  once on the new defaults and did not reproduce in four replays (`docs/research/REPORT.md` 6e). An aborted server is now
   restarted (`MIRAI_RESTARTS`, default 3 within ten minutes) and `MIRAI_STDERR_FILE` keeps its raw stderr so the
   next assert leaves its text; `tooling\stop.ps1` stops it without a restart.
 - **Engine be00bbdc1**: alesha-pro's control-vector projection mode (`--cvec-mode project`, off unless passed; greedy
@@ -68,7 +70,7 @@ activations, batch-invariant mode, PrismML PR #218). Not affiliated with any of 
 - **Linux**: `start-server.sh` and the Ubuntu 22.04 / RTX 3090 check (build line, identity 5/5, decode by depth) from
   alesha-pro's pull request; the layer on Linux is not wired.
 - **Removing refusals, optional**: alesha-pro's refusal-direction control vector and his measurements, in
-  `docs/CONTROL-VECTOR.md` with a short README pointer; off unless the file is passed, not measured on the suite here.
+  `docs/research/CONTROL-VECTOR.md` with a short README pointer; off unless the file is passed, not measured on the suite here.
 
 
 ## bundle-20261007 (fixes from the first user reports on the sister Bonsai serve)
@@ -386,7 +388,7 @@ Same model file. New engine binaries (engine commit `75eaee882`), launcher and l
   present and cannot stop the launcher; the layer turns off with its `layer  off:` line as intended.
 - **`llama-perplexity` fixed:** the copy in bundle-20261008d was older than its library and stopped at an assertion.
 - Measured, not changed: q4_0 K/V costs this model far more than q8_0 (top token flipped on 1 position in 34, single
-  tokens far off; docs/REPORT.md 6f), so K/V stays q8_0.
+  tokens far off; docs/research/REPORT.md 6f), so K/V stays q8_0.
 
 ## bundle-20261008d (the shared CUDA pool, made safe)
 

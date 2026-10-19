@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S agent work</title>
+<!-- Agent work on the RTX 4070 12 GB. Every number is in DATA below, each with its source. Edit DATA, then run
+     bench/render_cards.ps1. Values in the table are display text; null = not measured. -->
+<script>
+var DATA = {
+  foot: [
+    'AppWorld test_normal, 168 tasks, ReAct code agent, raw server: receipts/mirai-port/appworld.log (bundle-20261009, 2026-10-09). vLLM plugin and BF16: alesha-pro, qwen38-27b-bench-4x3090 agentic-v1 (docs/research/REPORT.md 6i).',
+    'Edited prompt: receipts/mirai-port/ckpt_ab.jsonl (bundle-20261009). Rewrites: receipts/lookup_ab_mirai.jsonl (bundle-20261008). 107 tools: receipts/tools_ab_mirai.log (bundle-20261008c). Edit calls: REPORT.md 6h (2026-10-09).',
+    'Effort "high": the first-comparison table in docs/speed/README.md (bundle-20261006). Each before / now speed pair gives the same output.'
+  ],
+  // task goal completion, %; scenario goal in the note
+  appworld: [
+    { label: 'BF16 reference', note: 'alesha-pro · scenario 91.1', v: 95.8, color: 'var(--nm)' },
+    { label: 'Mirai S, vLLM plugin', note: '4x RTX 3090, alesha-pro · scenario 75.0', v: 89.9, color: 'var(--ref)' },
+    { label: 'Mirai S, this serve', note: '1x RTX 4070 12 GB · scenario 73.2', v: 88.7, color: 'var(--serve)' }
+  ],
+  rows: [
+    { label: 'Edited tool result, 32k', note: 's',
+      before: { v: '36.5 / 34.6' }, now: { v: '6.6 / 4.5' } },         // ckpt_ab.jsonl shlex quote / edit, n0 vs n8192
+    { label: 'File rewrite, 130k', note: 'tok/s',
+      before: { v: '20.1' }, now: { v: '84.9' } },                     // lookup_ab_mirai.jsonl d130-mtp vs d130-mod+mtp-L32, quote
+    { label: 'File rewrite, short', note: 'tok/s',
+      before: { v: '86.5' }, now: { v: '265.6' } },                    // lookup_ab_mirai.jsonl mtp vs mod+mtp-L32, depth 0, quote
+    { label: '107 tools, ~63k', note: 'tok/s',
+      before: { v: '36.7' }, now: { v: '45.0' } },                     // tools_ab_mirai.log server ask 1 (plan-like)
+    { label: 'Three tool calls', note: 'tok/s',
+      before: { v: '59.6' }, now: { v: '70.4' } },                     // tools_ab_mirai.log tool-call request
+    { label: 'Edit calls rejected',
+      before: null, now: { v: '0', unit: 'of 91' } },                  // REPORT.md 6h
+    { label: 'Effort "high"',
+      before: { t: 'template error' }, now: { t: 'answered' } } // the first-comparison table in docs/speed/README.md
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var D = DATA;
+  var body = card({
+    eyebrow: 'Agent work · RTX 4070 12 GB',
+    title: 'AppWorld 88.7 % on one 12 GB card, and faster agent turns',
+    foot: D.foot
+  });
+  var left = panel(body, 'AppWorld, 168 tasks, task goals %', '1');
+  hbars(left, D.appworld.map(function (r, i) { var o = { label: r.label, note: r.note }; o['s' + i] = { v: r.v, text: fmt(r.v, 1) }; return o; }),
+    D.appworld.map(function (r, i) { return { key: 's' + i, name: r.label, color: r.color }; }),
+    { W: 480, H: 340, labelW: 0, R: 70, max: 100, barH: 30, valSize: 24, below: true });
+  var right = panel(body, 'Before → now, same output', '1.25');
+  colTable(right, [
+    { key: 'before', name: 'Before', sub: '', color: COLOR.ref },
+    { key: 'now', name: 'Now', sub: '', color: COLOR.serve, focus: true }
+  ], D.rows, { labelFr: '1.35fr' });
+})();
+</script>
