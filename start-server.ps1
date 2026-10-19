@@ -151,7 +151,6 @@ $Spec = if ($env:MIRAI_SPEC) { [int]$env:MIRAI_SPEC } elseif ($env:MIRAI_SPEC_TY
 # (~4.5k K/V positions). Measured 2026-10-05 (receipts/mirai-port/tail_draft.log) at 60k / 120k: tail 2 32.2 / 15.1,
 # tail 3 37.0 / 17.8, tail 4 38.8 / 19.3 tok/s against 14.6 / 6.2 with no draft. Tail 2 costs nothing beyond what
 # drafting below the line already needs and moves the line up ~9k positions; MIRAI_SPEC_DEEP=4 buys +20% past it.
-$SpecDeep = if ($env:MIRAI_SPEC_DEEP) { [int]$env:MIRAI_SPEC_DEEP } else { 2 }
 # Replay rollback (an engine with LLAMA_RS_REPLAY; on by default, MIRAI_RS_REPLAY=0 turns it off): the recurrent state keeps
 # one plane instead of one 150 MiB snapshot per rollback token; each rollback token then costs ~8 MiB (its conv snapshot and
 # its inputs). The output is byte-identical; the freed VRAM goes to the KV cache (receipts/replay M1-M5).
@@ -161,6 +160,9 @@ $Replay = $Spec -gt 0 -and $env:MIRAI_RS_REPLAY -ne '0' -and $LlamaDll.Contains(
 if ($Replay) { $env:LLAMA_RS_REPLAY = '1' }
 elseif ($env:MIRAI_RS_REPLAY -eq '1') { Write-Host "note   MIRAI_RS_REPLAY=1 is off: $(if ($Spec -le 0) { 'drafting is off' } else { 'this engine has no replay rollback' })" }
 $SnapMiB = if ($Replay) { 8 } else { 150 }   # VRAM per rollback token
+# With replay a tail token costs ~8 MiB, so the tail is 4 (receipts/tail4, 2026-10-19: decode +18.8 % at 128k and +23.5 %
+# at 200k against tail 2, the line 512 positions lower); without replay tail 2 (each token a 150 MiB snapshot).
+$SpecDeep = if ($env:MIRAI_SPEC_DEEP) { [int]$env:MIRAI_SPEC_DEEP } elseif ($Replay) { 4 } else { 2 }
 $DraftWindow = if ($env:MIRAI_DRAFT_WINDOW) { [int]$env:MIRAI_DRAFT_WINDOW } else { 16384 }
 # MIRAI_SPEC_TYPE: mtp (default: the GGUF's own draft block, draft 2) or dflash (ggml-org's dflash-Qwen3.8-27B drafter,
 # draft 3). Measured 2026-10-06 (E22): dflash draft 3 decodes +13% at depth 0 and +8.5% at 16k (86 / 78 vs 76 / 72 tok/s),
