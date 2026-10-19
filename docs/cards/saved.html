@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S saved conversations</title>
+<!-- Saved conversations: the time to continue after a server restart, with and without a saved state. Every number is
+     in DATA below, each with its source. Edit DATA, then run bench/render_cards.ps1. -->
+<script>
+var DATA = {
+  foot: [
+    'RTX 4070 12 GB, 262k window, q8_0 cache. 64k / 128k / 245k: RELEASE-NOTES.md bundle-20261017 (POST /slots/0?action=save|restore; answers identical to no restart), 2026-10-17.',
+    '128k document through the layer: RELEASE-NOTES.md bundle-20261017b (restore 2.2 s, 39 new tokens). Delta saves: bundle-20261018b (174k conversation) and bundle-20261018c (30-turn session).',
+    'With replay rollback on (bundle-20261019b): not measured (the cold reads with it are on the prefill card). Bar length: re-read seconds, and restore + new turn seconds.'
+  ],
+  // reread = seconds to read the conversation again; restore = [restore s, new turn s] after a restart
+  rows: [
+    { label: '64k', note: 'conversation', reread: 73, restore: [0.8, 0.4] },
+    { label: '128k', note: 'conversation', reread: 195, restore: [1.6, 0.6] },
+    { label: '245k', note: 'conversation', reread: 524, restore: [9.0, 1.6] },
+    { label: '128k', note: 'document, layer', reread: 199, total: 6.7 }   // bundle-20261017b: 6.7 s against 199 s cold
+  ],
+  // delta saves: before (full save) -> now (delta), RELEASE-NOTES.md bundle-20261018b / 20261018c
+  deltas: [
+    { label: 'Save a 174k conversation', full: 227, fullText: '227 s', delta: 0.6, deltaText: '0.2-0.6 s' },
+    { label: 'Mean wait per turn, 30 turns', full: 74, fullText: '74 s', delta: 23, deltaText: '23 s' }
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var D = DATA;
+  var body = card({
+    eyebrow: 'Saved conversations · MIRAI_SLOT_SAVE_PATH · RTX 4070 12 GB',
+    title: 'A long conversation comes back in seconds',
+    legend: [['var(--ref)', 'read it all again / full save'], ['var(--serve)', 'restore + new turn / delta save (new tokens only)']],
+    foot: D.foot
+  });
+  var left = panel(body, 'Seconds after a server restart', '1.6');
+  hbars(left, D.rows.map(function (r) {
+    var t = r.total !== undefined ? r.total : r.restore[0] + r.restore[1];
+    var txt = r.total !== undefined ? fmt(r.total, 1) + ' s' : fmt(r.restore[0], 1) + ' + ' + fmt(r.restore[1], 1) + ' s';
+    return { label: r.label, note: r.note, a: { v: r.reread, text: fmt(r.reread) + ' s' }, b: { v: t, text: txt } };
+  }), [
+    { key: 'a', name: 're-read', color: 'var(--ref)' },
+    { key: 'b', name: 'restored', color: 'var(--serve)' }
+  ], { W: 700, H: 340, labelW: 150, R: 130, max: 524, barH: 24, valSize: 20 });
+  var right = panel(body, 'Full saves and delta saves', '1');
+  hbars(right, D.deltas.map(function (r) { return { label: r.label, a: { v: r.full, text: r.fullText }, b: { v: r.delta, text: r.deltaText } }; }), [
+    { key: 'a', name: 'full save', color: 'var(--ref)' },
+    { key: 'b', name: 'delta', color: 'var(--serve)' }
+  ], { W: 400, H: 340, labelW: 0, R: 90, max: 227, barH: 26, valSize: 20, below: true });
+})();
+</script>

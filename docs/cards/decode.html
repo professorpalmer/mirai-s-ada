@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S decode by depth</title>
+<!-- Decode speed by context depth on the RTX 4070 12 GB. Every number is in DATA below, each with its source. Edit
+     DATA, then run bench/render_cards.ps1. Points are [context tokens, tok/s]; only measured points are drawn.
+     Each panel uses one run only: the two panels used different prompts and are not compared with each other. -->
+<script>
+var DATA = {
+  foot: [
+    'Left: RELEASE-NOTES.md bundle-20261019 (A/B of replay rollback, decode of a 300-token answer), the default since bundle-20261019b, 2026-10-19. VRAM lines from the same notes.',
+    'Right: RELEASE-NOTES.md bundle-20261016 (MIRAI_CTK=q3_0 against the q8_0 default in the same run, 262k window; VRAM line 58,624 -> 167,680). The two panels used different runs.',
+    'RTX 4070 12 GB, q8_0 K/V, MTP and lookup drafting. The reference fork stops at a 64k window (docs/research/REPORT.md section 2).'
+  ],
+  window: 262144,
+  // decode tok/s at 4k / 64k / 128k / 200k, RELEASE-NOTES.md bundle-20261019
+  series: [
+    { name: 'replay rollback on (the default)', color: 'var(--serve)', points: [[4000, 62.8], [64000, 48.2], [128000, 17.9], [200000, 9.1]], vram: 67840 },
+    { name: 'replay rollback off', color: 'var(--ref)', points: [[4000, 62.9], [64000, 44.9], [128000, 15.8], [200000, 8.5]], vram: 58624 }
+  ],
+  refWindow: 65536,   // the reference fork: a 64k window at q8_0 (the first-comparison table in docs/speed/README.md, REPORT.md section 2)
+  // MIRAI_CTK=q3_0 option, RELEASE-NOTES.md bundle-20261016: q8_0 21.7 / 12.9 / 9.6, q3_0 61.6 / 51.3 / 36.9 tok/s
+  q3: [
+    { label: '128k', q8: 21.7, q3: 61.6 },
+    { label: '192k', q8: 12.9, q3: 51.3 },
+    { label: '245k', q8: 9.6, q3: 36.9 }
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var D = DATA;
+  var body = card({
+    eyebrow: 'Decode speed by context depth · RTX 4070 12 GB',
+    title: 'Decode through the whole 262k window',
+    sub: 'Tokens per second. Past the VRAM line the cache is read from system RAM over PCIe.',
+    legend: D.series.map(function (s, i) { return [s.color, s.name + (i ? ': ' + s.points.map(function (p) { return fmt(p[1], 1); }).join(' / ') : '')]; }).concat([['var(--opt)', 'MIRAI_CTK=q3_0 option (right)']]),
+    foot: D.foot
+  });
+  // Left: the line chart
+  var left = panel(body, 'q8_0 cache, bundle-20261019', '1.75');
+  var W = 700, H = 330, L = 50, R = 20, T = 26, B = 36;
+  var ymax = 0;
+  D.series.forEach(function (s) { s.points.forEach(function (p) { ymax = Math.max(ymax, p[1]); }); });
+  ymax = Math.ceil(ymax / 20) * 20;
+  var x = function (v) { return L + v / D.window * (W - L - R); };
+  var y = function (v) { return T + (1 - v / ymax) * (H - T - B); };
+  var s = svg(W, H);
+  for (var g = 0; g <= ymax; g += 20) {
+    s.appendChild(el('line', { x1: L, x2: W - R, y1: y(g), y2: y(g), stroke: 'var(--grid)' }));
+    s.appendChild(el('text', { x: L - 8, y: y(g) + 6, 'text-anchor': 'end', style: 'font-size:15px' }, g));
+  }
+  [0, 64000, 128000, 192000, 262144].forEach(function (v, i, a) {
+    s.appendChild(el('text', { x: x(v), y: H - B + 24, 'text-anchor': i === a.length - 1 ? 'end' : 'middle', style: 'font-size:15px' }, v === 0 ? '0' : Math.round(v / 1000) + 'k'));
+  });
+  // the reference fork's window end
+  s.appendChild(el('rect', { x: x(0), y: T, width: x(D.refWindow) - x(0), height: H - T - B, fill: 'var(--ref-soft)', opacity: 0.45 }));
+  s.appendChild(el('text', { x: L + 8, y: H - B - 28, style: 'font-size:13px;fill:var(--ref)' }, 'reference fork:'));
+  s.appendChild(el('text', { x: L + 8, y: H - B - 10, style: 'font-size:13px;fill:var(--ref)' }, 'its 64k window'));
+  // VRAM lines
+  D.series.forEach(function (se, i) {
+    var v = se.vram;
+    s.appendChild(el('line', { x1: x(v), x2: x(v), y1: T - 6, y2: H - B, stroke: se.color, 'stroke-dasharray': '6 5', 'stroke-width': 1.6 }));
+    s.appendChild(el('text', { x: x(v) + (i ? -6 : 6), y: T + 6 + (i ? 0 : 0), 'text-anchor': i ? 'end' : 'start', style: 'font-size:13px;fill:' + se.color }, 'VRAM line ' + fmt(v)));
+  });
+  // replay off: a thin dashed line, values in the legend; the default: a solid line with labels
+  D.series.slice().reverse().forEach(function (se, k) {
+    var main = k === D.series.length - 1;
+    s.appendChild(el('path', { d: se.points.map(function (p, i) { return (i ? 'L' : 'M') + x(p[0]) + ' ' + y(p[1]); }).join(' '),
+      fill: 'none', stroke: se.color, 'stroke-width': main ? 3.4 : 2, 'stroke-dasharray': main ? 'none' : '7 5', 'stroke-linejoin': 'round' }));
+    se.points.forEach(function (p, i) {
+      s.appendChild(el('circle', { cx: x(p[0]), cy: y(p[1]), r: main ? 5.5 : 3.5, fill: se.color }));
+      if (main) s.appendChild(el('text', { class: 'val', x: x(p[0]) + (i === 0 ? 10 : 6), y: y(p[1]) - 13, 'text-anchor': 'start', style: 'font-size:21px;fill:' + se.color }, fmt(p[1], 1)));
+    });
+  });
+  left.appendChild(s);
+  // Right: the q3_0 option
+  var right = panel(body, 'Option MIRAI_CTK=q3_0 vs q8_0', '1');
+  hbars(right, D.q3.map(function (r) {
+    return { label: r.label, q8: { v: r.q8, text: fmt(r.q8, 1) }, q3: { v: r.q3, text: fmt(r.q3, 1) } };
+  }), [
+    { key: 'q8', name: 'q8_0 (default)', color: 'var(--serve)' },
+    { key: 'q3', name: 'q3_0', color: 'var(--opt)' }
+  ], { W: 390, H: 330, labelW: 64, R: 70, max: 62, barH: 30, valSize: 20 });
+})();
+</script>

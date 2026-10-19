@@ -4,7 +4,7 @@ models/
 
 # built / downloaded binaries and build trees (tooling\build_engine.bat builds engine\ into build\, install_bin.ps1 fills bin\)
 bin/
-build/
+/build/
 tooling/ninja/
 *.exe
 *.dll

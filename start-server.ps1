@@ -17,7 +17,7 @@
 #   MIRAI_CTK=q3_0         long-context cache (2.9x the positions in VRAM, 245k decode 3.8x; MIRAI_CTV for a separate V type)
 #   MIRAI_SLOT_SAVE_PATH=dir  saved conversations: the layer saves long prompts there and restores them (lc- files, 20 GB cap);
 #                          POST /slots/0?action=save|restore {"filename": ...} also works (those files are not removed)
-#   MIRAI_SLOT_CACHE_AFTER=1  saved conversations save after the answer, not before the request (opt-in; see the README)
+#   MIRAI_SLOT_CACHE_AFTER=1  saved conversations save after the answer, not before the request (opt-in; see docs/agents-layer/SAVED_CONVERSATIONS.md)
 $ErrorActionPreference = 'Stop'
 # Variables set in this window before the launcher runs. A value left over from an earlier test (MIRAI_SPEC=0 is the
 # common one) silently changes the server; the launcher prints them all at start.

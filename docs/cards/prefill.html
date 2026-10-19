@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S prompt reading</title>
+<!-- Prefill (prompt reading) on the RTX 4070 12 GB. Every number is in DATA below, each with its source. Edit DATA,
+     then run bench/render_cards.ps1. A cell left out is not drawn; null prints "not measured". -->
+<script>
+var DATA = {
+  foot: [
+    '16.8k: receipts/mirai-port/levels_chunk.log (L64, 1,090) and ub2048_probe.log (U2048, 1,148), 2026-10-05. 64k / 128k / 200k: cold reads, replay rollback on, engine 1ee7f9766 (bundle-20261019b), 2026-10-19, receipts/replay/m34.jsonl.',
+    'Reference fork: the first-comparison table in docs/speed/README.md and docs/research/PREFILL.md (~1,000 tok/s). Re-read times: RELEASE-NOTES.md bundle-20261017, 262k window, q8_0 cache, 2026-10-17.',
+    'The 16.8k row is older (2026-10-05) than the cold reads (2026-10-19).'
+  ],
+  // prefill tok/s
+  rows: [
+    { label: '16.8k prompt', note: '2048 mode: 1,148',
+      serve: { v: 1090, text: '1,090' },            // levels_chunk.log L64 first request
+      ref: { v: 1000, text: '~1,000' } },           // the first-comparison table in docs/speed/README.md
+    { label: '64k prompt, cold', note: '63,579 tokens',
+      serve: { v: 912, text: '912 · 70 s' } },            // receipts/replay/m34.jsonl tag on, depth 64000: 912.3 tok/s
+    { label: '128k prompt, cold', note: '128,119 tokens',
+      serve: { v: 678, text: '678 · 189 s' } },            // receipts/replay/m34.jsonl tag on, depth 128000: 677.6 tok/s
+    { label: '200k prompt, cold', note: '200,758 tokens',
+      serve: { v: 527, text: '527 · 381 s' } }            // receipts/replay/m34.jsonl tag on, depth 200000: 527.3 tok/s
+  ],
+  max: 1100,
+  // seconds to read a whole conversation again (no saved state), RELEASE-NOTES.md bundle-20261017 table
+  reread: [
+    { label: '64k', s: 73 },
+    { label: '128k', s: 195 },
+    { label: '245k', s: 524 }
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var D = DATA;
+  var body = card({
+    eyebrow: 'Prompt reading (prefill) · RTX 4070 12 GB',
+    title: 'Read long prompts at the int8 limit of the card',
+    sub: 'Tokens per second, and the seconds to the first token on a cold read. A saved conversation skips the second read.',
+    legend: [['var(--serve)', 'this serve'], ['var(--ref)', 'the reference fork (64k window)']],
+    foot: D.foot
+  });
+  var left = panel(body, 'Tokens per second', '1.55');
+  hbars(left, D.rows, [
+    { key: 'serve', name: 'this serve', color: 'var(--serve)' },
+    { key: 'ref', name: 'reference fork', color: 'var(--ref)' }
+  ], { W: 640, H: 330, labelW: 250, R: 90, max: D.max, barH: 26 });
+  var right = panel(body, 'Seconds to read a conversation again', '1');
+  hbars(right, D.reread.map(function (r) { return { label: r.label, s: { v: r.s, text: fmt(r.s) + ' s' } }; }),
+    [{ key: 's', name: 're-read', color: 'var(--serve)' }],
+    { W: 400, H: 330, labelW: 70, R: 80, max: 524, barH: 34 });
+})();
+</script>

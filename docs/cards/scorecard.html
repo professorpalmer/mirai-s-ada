@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mirai S scorecard</title>
+<!-- The main card (README). Every number is in DATA below, each with its source. Edit DATA, then run
+     bench/render_cards.ps1. Rendered at 1200 x 675, device scale 2. null = not measured (the card says so). -->
+<script>
+var DATA = {
+  // Small print under the card, one line per column.
+  foot: [
+    'This serve: RTX 4070 12 GB, q8_0 K/V, defaults of bundle-20261019b. Positions in VRAM and decode (a 300-token answer, replay rollback on): RELEASE-NOTES.md bundle-20261019 / 20261019b, 2026-10-19.',
+    'Prompt read: receipts/mirai-port/levels_chunk.log, 2026-10-05. HumanEval: RELEASE-NOTES.md bundle-20261014. AppWorld: receipts/mirai-port/appworld.log, bundle-20261009, 2026-10-09. Restart: RELEASE-NOTES.md bundle-20261017.',
+    'Reference fork: same card, 64k q8_0 window, receipts/mirai-port/profile-stock-fork-q8-64k.txt (docs/research/REPORT.md section 2; bench/quick_tps.py, 400-token answers, another prompt set).'
+  ],
+  rows: [
+    { label: 'Context window', note: 'q8_0 K/V',
+      ref: { v: '64k', unit: '11.0 GB' },               // the first-comparison table in docs/speed/README.md (receipts/mirai-port/profile-stock-fork-q8-64k.txt)
+      serve: { v: '262,144', unit: 'tokens' } },         // start-server.ps1 default MIRAI_CTX
+    { label: 'Positions in VRAM',
+      ref: { t: 'all of its 64k window' },
+      serve: { v: '67,840', unit: 'of 262,144' } },     // RELEASE-NOTES.md bundle-20261019b (replay rollback on)
+    { label: 'Decode at 4k', note: 'tok/s',
+      ref: { v: '39.6' },                                // profile-stock-fork-q8-64k.txt depth 4000, mean decode
+      serve: { v: '62.8' } },                            // RELEASE-NOTES.md bundle-20261019, replay on, 4k
+    { label: 'Decode at 64k', note: 'tok/s',
+      ref: { v: '33.5', unit: 'at 60k' },                // profile-stock-fork-q8-64k.txt depth 60000, mean decode
+      serve: { v: '48.2' } },                            // RELEASE-NOTES.md bundle-20261019, replay on, 64k
+    { label: 'Decode at 128k / 200k', note: 'tok/s',
+      ref: { t: 'past its 64k window' },
+      serve: { v: '17.9 / 9.1' } },                      // RELEASE-NOTES.md bundle-20261019, replay on, 128k / 200k
+    { label: 'Read a 16.8k prompt', note: 'tok/s',
+      ref: { v: '~1,000' },                              // the first-comparison table in docs/speed/README.md (docs/research/PREFILL.md: ~1,000)
+      serve: { v: '1,090' } },                           // levels_chunk.log L64, 2026-10-05 (the first-comparison table in docs/speed/README.md)
+    { label: 'HumanEval 164', note: 'medium',
+      ref: null,
+      serve: { v: '159', unit: '/ 164' } },              // RELEASE-NOTES.md bundle-20261014 (greedy)
+    { label: 'AppWorld, 168 tasks', note: 'code agent',
+      ref: null,
+      serve: { v: '88.7 %', unit: 'task goals' } },       // receipts/mirai-port/appworld.log, aggregate task_goal_completion
+    { label: '245k chat after a restart', note: 'restore + turn',
+      ref: { t: 'past its 64k window' },
+      serve: { v: '9.0 + 1.6 s', unit: 'not 524 s' } }    // RELEASE-NOTES.md bundle-20261017 table
+  ]
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="card.css">
+<div class="card" id="card"></div>
+<script src="card.js"></script>
+<script>
+(function () {
+  var body = card({
+    eyebrow: 'Mirai S 27B · RTX 4070 12 GB · one slot',
+    title: 'The full 262k window and drafting at every depth on 12 GB',
+    foot: DATA.foot
+  });
+  colTable(body, [
+    { key: 'ref', name: 'The reference fork', sub: 'the starting point, same weights', color: COLOR.ref },
+    { key: 'serve', name: 'This serve', sub: 'bundle-20261019b defaults', color: COLOR.serve, focus: true, fr: '1.1fr' }
+  ], DATA.rows);
+})();
+</script>

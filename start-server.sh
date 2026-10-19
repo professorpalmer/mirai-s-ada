@@ -24,7 +24,7 @@ EFFORT_ALLOWED="${MIRAI_EFFORT_ALLOWED:-medium}"
 THINK_BUDGET="${MIRAI_THINK_BUDGET:-20480}"
 UBATCH="${MIRAI_UBATCH:-1024}"
 
-[ -x "$SERVER" ] || { echo "no llama-server at $SERVER (build the engine first, see README)"; exit 1; }
+[ -x "$SERVER" ] || { echo "no llama-server at $SERVER (build the engine first, see docs/setup/README.md)"; exit 1; }
 [ -f "$MODEL" ] || { echo "no model at $MODEL (download it from alesha-pro/Qwen3.8-27B-S-mirai-GGUF)"; exit 1; }
 
 export GGML_CUDA_BATCH_INVARIANT=1
