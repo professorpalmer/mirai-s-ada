@@ -111,6 +111,26 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261018c (the full save of a long conversation waits for idle time)
+
+Same model file and engine (`cc1c1391b`). Only the layer changes.
+
+- **Before:** after 8 deltas, the next save was a full save of the whole conversation, written right after an answer.
+  On a slow drive it can take minutes (~6 GB for a long Mirai conversation), and a turn sent then waited for it.
+- **Now:** after 8 deltas, the full save runs when the layer has been idle for 30 s (`BONSAI_SLOT_CACHE_IDLE`).
+  - Until then the chain grows. A restore costs ~1 s more per delta.
+  - After 32 deltas (`BONSAI_SLOT_CACHE_CHAIN_MAX`), the full save happens in any case.
+- **Measured:** in a 30-turn session with restarts and pauses of 20 s, no full save landed on a turn any more.
+  - With delta saves for both kinds of save, the default (save before the request) waits 23 s per turn on average.
+  - With full saves (bundle-20261018) it waited 74 s.
+- Checks on the zip:
+  - only the layer file changed;
+  - the bundle smoke test 5/5 the same;
+  - a saved conversation restored after a restart;
+  - the default launcher makes deltas;
+  - an idle full save after a long chain;
+  - 0 CUDA errors.
+
 ## bundle-20261018b (delta saves: a save writes only what is new)
 
 Same model file. Engine `cc1c1391b` (`5f93f07c0` + delta slot saves). Layer: delta saves.
