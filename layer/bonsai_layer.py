@@ -630,9 +630,13 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             self.wfile.write(line + b"\n\n")
             self.wfile.flush()
 
+        cut_retry = False
         try:
             for rnd in range(self.max_rounds + 1):
                 body["messages"] = msgs
+                if cut_retry:                         # the last round was cut inside our tool call: the same messages,
+                    body.pop("tools", None)           # without our tool, so the model answers in text
+                    body.pop("tool_choice", None)
                 if rnd == self.max_rounds:            # last round: no more code, answer now
                     body.pop("tools", None)
                     body.pop("tool_choice", None)
@@ -733,6 +737,10 @@ class Proxy(http.server.BaseHTTPRequestHandler):
                         send(b"data: " + p)
                 ordered = [calls[i] for i in sorted(calls)]
                 ours = [c for c in ordered if c["function"]["name"] == TOOL_NAME]
+                if (truncated and ours and len(ours) == len(ordered) and not "".join(content).strip() and not cut_retry
+                        and rnd < self.max_rounds):
+                    cut_retry = True               # cut inside our run_python call with no text sent: ask once more
+                    continue                       # without our tool (the held call and finish chunk are dropped)
                 if truncated or not ours or len(ours) != len(ordered) or rnd == self.max_rounds:
                     done = [l for l in held if l.strip() == b"data: [DONE]"]
                     our_idx = {i for i, c in calls.items() if c["function"]["name"] == TOOL_NAME}
@@ -928,8 +936,14 @@ class Proxy(http.server.BaseHTTPRequestHandler):
         ec_task = example_check.task(user_text(msgs)) if ec_on else None
         ec_done = False
         final_msg = FINAL_REASON if body.pop("final_mode", None) == "reason" else FINAL_NUDGE    # E16 toggle
+        cut_retry = False
         for rnd in range(max_rounds + 1):
             body["messages"] = msgs
+            if cut_retry:                         # the last round was cut inside our tool call: the same messages,
+                body["tools"] = client_tools or None  # without our tool, so the model answers in text
+                if not client_tools:
+                    body.pop("tools", None)
+                    body.pop("tool_choice", None)
             if rnd == max_rounds:                 # last round: no more code, answer now
                 body["tools"] = client_tools or None
                 if not client_tools:
@@ -947,6 +961,12 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             calls = m.get("tool_calls") or []
             ours = [c for c in calls if c["function"]["name"] == TOOL_NAME]
             truncated = resp["choices"][0].get("finish_reason") == "length"   # half-written calls: hand back, never run
+            if truncated and ours and len(ours) == len(calls) and not (m.get("content") or "").strip() and not cut_retry:
+                # max_tokens cut the round inside our run_python call (the model was writing its answer into code):
+                # handing back would give the client nothing. Ask once more without our tool so the answer is text.
+                cut_retry = True
+                info["cut_retry"] = True
+                continue
             if ec_task and not ec_done and not truncated and not calls:   # example check: the final answer, once
                 ec_done = True
                 code = example_check.answer_code(m.get("content") or "", ec_task[0])
