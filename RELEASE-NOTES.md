@@ -111,6 +111,25 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261018d (with the save after the answer on: a save after every answer)
+
+Same model file and engine (`cc1c1391b`). Only the layer changes.
+
+- **With `MIRAI_SLOT_CACHE_AFTER=1`:** the layer saves after every answer of a long conversation, as a delta. The next
+  turn restores exactly the state after the last answer and reads only the new turn, also when several conversations
+  take turns. The test is exact: the last save must be a token prefix of the new prompt.
+  - Sessions that share their start each keep their own saves (up to 4 per start).
+  - A template that rewrites every answer fails the test; after 2 failures in a row the layer tries again only every
+    4th turn and uses the save before the request.
+  - Under budget pressure a full save replaces a long chain of deltas.
+  - A save that would evict another conversation's save used in the last 10 minutes is skipped
+    (`BONSAI_SLOT_CACHE_PROTECT`, seconds; 0 = off).
+- **Default (`MIRAI_SLOT_CACHE_AFTER` unset):** unchanged (the save before the request), except a review fix: removing
+  a chain never leaves a delta without its parent.
+- Checks on the zip: only the layer and notes changed; the bundle smoke test 5/5 the same; a saved conversation
+  restored after a restart; the default launcher makes deltas; with the save after the answer on, a save after each
+  answer and two interleaved conversations each restore their own last save; 0 CUDA errors.
+
 ## bundle-20261018c (the full save of a long conversation waits for idle time)
 
 Same model file and engine (`cc1c1391b`). Only the layer changes.
