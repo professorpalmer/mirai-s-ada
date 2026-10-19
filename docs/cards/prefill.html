@@ -6,19 +6,21 @@
 <script>
 var DATA = {
   foot: [
-    '16.8k: receipts/mirai-port/levels_chunk.log (L64, 1,090) and ub2048_probe.log (U2048, 1,148), 2026-10-05. 100k / 130k: RELEASE-NOTES.md bundle-20261008b (one read, first token after 202 s).',
+    '16.8k: receipts/mirai-port/levels_chunk.log (L64, 1,090) and ub2048_probe.log (U2048, 1,148), 2026-10-05. 64k / 128k / 200k: cold reads, replay rollback on, engine 1ee7f9766 (bundle-20261019b), 2026-10-19, receipts/replay/m34.jsonl.',
     'Reference fork: the first-comparison table in docs/speed/README.md and docs/research/PREFILL.md (~1,000 tok/s). Re-read times: RELEASE-NOTES.md bundle-20261017, 262k window, q8_0 cache, 2026-10-17.',
-    'Since then: bundle-20261014 +3.5 % code prefill at 128k and 192k (RELEASE-NOTES.md). Prefill with replay rollback on (bundle-20261019b): not measured.'
+    'The 16.8k row is older (2026-10-05) than the cold reads (2026-10-19).'
   ],
   // prefill tok/s
   rows: [
     { label: '16.8k prompt', note: '2048 mode: 1,148',
       serve: { v: 1090, text: '1,090' },            // levels_chunk.log L64 first request
       ref: { v: 1000, text: '~1,000' } },           // the first-comparison table in docs/speed/README.md
-    { label: '100k prompt, one read',
-      serve: { v: 722, text: '722' } },             // RELEASE-NOTES.md bundle-20261008b (before: 596)
-    { label: '130k prompt, one read', note: 'first token after 202 s',
-      serve: { v: 639, text: '639' } }              // RELEASE-NOTES.md bundle-20261008b (before: 509, 254 s)
+    { label: '64k prompt, cold', note: '63,579 tokens',
+      serve: { v: 912, text: '912 · 70 s' } },            // receipts/replay/m34.jsonl tag on, depth 64000: 912.3 tok/s
+    { label: '128k prompt, cold', note: '128,119 tokens',
+      serve: { v: 678, text: '678 · 189 s' } },            // receipts/replay/m34.jsonl tag on, depth 128000: 677.6 tok/s
+    { label: '200k prompt, cold', note: '200,758 tokens',
+      serve: { v: 527, text: '527 · 381 s' } }            // receipts/replay/m34.jsonl tag on, depth 200000: 527.3 tok/s
   ],
   max: 1100,
   // seconds to read a whole conversation again (no saved state), RELEASE-NOTES.md bundle-20261017 table
@@ -39,7 +41,7 @@ var DATA = {
   var body = card({
     eyebrow: 'Prompt reading (prefill) · RTX 4070 12 GB',
     title: 'Read long prompts at the int8 limit of the card',
-    sub: 'A saved conversation skips the second read (see the saved-conversations card).',
+    sub: 'Tokens per second, and the seconds to the first token on a cold read. A saved conversation skips the second read.',
     legend: [['var(--serve)', 'this serve'], ['var(--ref)', 'the reference fork (64k window)']],
     foot: D.foot
   });

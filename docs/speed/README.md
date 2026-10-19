@@ -71,18 +71,22 @@ replay rollback, and the newer runs use a different prompt.
 
 ## Prompt reading (prefill)
 
-![Prompt reading on the RTX 4070 12 GB: a 16.8k prompt at 1,090 tok/s (2048 mode 1,148; the reference fork ~1,000), a 100k prompt at 722 tok/s, a 130k prompt at 639 tok/s with the first token after 202 s. Reading a whole conversation again takes 73 s at 64k, 195 s at 128k and 524 s at 245k](img/prefill.png)
+![Prompt reading on the RTX 4070 12 GB: a 16.8k prompt at 1,090 tok/s (2048 mode 1,148; the reference fork ~1,000), cold reads with replay rollback on: 64k at 912 tok/s (first token after 70 s), 128k at 678 tok/s (189 s), 200k at 527 tok/s (381 s). Reading a whole conversation again takes 73 s at 64k, 195 s at 128k and 524 s at 245k](img/prefill.png)
 
 | Prompt | tok/s | Source |
 | --- | ---: | --- |
 | 16.8k tokens, the default (micro-batch 1024) | 1,090 | `receipts/mirai-port/levels_chunk.log`, 2026-10-05 |
 | 16.8k tokens, `MIRAI_UBATCH=2048` (approximately 570 MiB more VRAM) | 1,148 | `receipts/mirai-port/ub2048_probe.log`, 2026-10-05 |
-| 100k tokens, one read | 722 (before bundle-20261008b: 596) | release notes, bundle-20261008b |
-| 130k tokens, one read | 639, first token after 202 s (before: 509, 254 s) | release notes, bundle-20261008b |
+| 4k tokens, cold, replay rollback on | 1,120, first token after 3.5 s | `receipts/replay/m34.jsonl`, 2026-10-19 |
+| 64k tokens, cold, replay rollback on | 912, first token after 70 s | `receipts/replay/m34.jsonl`, 2026-10-19 |
+| 128k tokens, cold, replay rollback on | 678, first token after 189 s | `receipts/replay/m34.jsonl`, 2026-10-19 |
+| 200k tokens, cold, replay rollback on | 527, first token after 381 s | `receipts/replay/m34.jsonl`, 2026-10-19 |
 | the reference fork, 16.8k tokens | approximately 1,000 | [PREFILL.md](../research/PREFILL.md) |
 
 bundle-20261014 added the chunked gated-delta-net prefill on tensor cores: code prefill +3.5 % at 128k and 192k.
-Prefill with replay rollback on (bundle-20261019b) is not measured.
+The cold reads come from the replay check of engine 1ee7f9766 (the bundle-20261019b engine): one request per depth,
+`cache_prompt: false`. With replay rollback off, the same file gives 64k-200k within 0.3 % and 4k at 1,184 tok/s
+(one request per depth, so the 4k difference can be noise).
 
 Time to read a whole conversation again, without a saved state (bundle-20261017, q8_0 cache): 73 s at 64k, 195 s at
 128k, 524 s at 245k. A saved conversation skips this read: [saved conversations](../agents-layer/SAVED_CONVERSATIONS.md).

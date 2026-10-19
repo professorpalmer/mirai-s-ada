@@ -8,7 +8,7 @@ var DATA = {
   foot: [
     'RTX 4070 12 GB, 262k window, q8_0 cache. 64k / 128k / 245k: RELEASE-NOTES.md bundle-20261017 (POST /slots/0?action=save|restore; answers identical to no restart), 2026-10-17.',
     '128k document through the layer: RELEASE-NOTES.md bundle-20261017b (restore 2.2 s, 39 new tokens). Delta saves: bundle-20261018b (174k conversation) and bundle-20261018c (30-turn session).',
-    'With replay rollback on (bundle-20261019b): not measured. Bar length: re-read seconds, and restore + new turn seconds.'
+    'With replay rollback on (bundle-20261019b): not measured (the cold reads with it are on the prefill card). Bar length: re-read seconds, and restore + new turn seconds.'
   ],
   // reread = seconds to read the conversation again; restore = [restore s, new turn s] after a restart
   rows: [
