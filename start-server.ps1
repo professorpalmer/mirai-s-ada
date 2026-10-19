@@ -152,11 +152,12 @@ $Spec = if ($env:MIRAI_SPEC) { [int]$env:MIRAI_SPEC } elseif ($env:MIRAI_SPEC_TY
 # tail 3 37.0 / 17.8, tail 4 38.8 / 19.3 tok/s against 14.6 / 6.2 with no draft. Tail 2 costs nothing beyond what
 # drafting below the line already needs and moves the line up ~9k positions; MIRAI_SPEC_DEEP=4 buys +20% past it.
 $SpecDeep = if ($env:MIRAI_SPEC_DEEP) { [int]$env:MIRAI_SPEC_DEEP } else { 2 }
-# Replay rollback (an engine with LLAMA_RS_REPLAY; MIRAI_RS_REPLAY=1): the recurrent state keeps one plane instead of one
-# 150 MiB snapshot per rollback token; each rollback token then costs ~8 MiB (its conv snapshot and its inputs).
+# Replay rollback (an engine with LLAMA_RS_REPLAY; on by default, MIRAI_RS_REPLAY=0 turns it off): the recurrent state keeps
+# one plane instead of one 150 MiB snapshot per rollback token; each rollback token then costs ~8 MiB (its conv snapshot and
+# its inputs). The output is byte-identical; the freed VRAM goes to the KV cache (receipts/replay M1-M5).
 $LlamaDll = ''
 try { $LlamaDll = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes((Join-Path $Bin 'llama.dll'))) } catch { }
-$Replay = $Spec -gt 0 -and $env:MIRAI_RS_REPLAY -eq '1' -and $LlamaDll.Contains('LLAMA_RS_REPLAY')
+$Replay = $Spec -gt 0 -and $env:MIRAI_RS_REPLAY -ne '0' -and $LlamaDll.Contains('LLAMA_RS_REPLAY')
 if ($Replay) { $env:LLAMA_RS_REPLAY = '1' }
 elseif ($env:MIRAI_RS_REPLAY -eq '1') { Write-Host "note   MIRAI_RS_REPLAY=1 is off: $(if ($Spec -le 0) { 'drafting is off' } else { 'this engine has no replay rollback' })" }
 $SnapMiB = if ($Replay) { 8 } else { 150 }   # VRAM per rollback token

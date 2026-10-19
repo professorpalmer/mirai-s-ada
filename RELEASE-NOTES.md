@@ -111,6 +111,19 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261019b (replay rollback on by default; replies cut at max_tokens are no longer empty)
+
+Same model file and engine (`1ee7f9766`).
+
+- **Replay rollback is on by default** (`MIRAI_RS_REPLAY=0` turns it off). The same text as without it; 285 MiB more
+  KV cache in VRAM (on the RTX 4070 the VRAM line goes from 58,624 to 67,840 positions; decode +7 % / +14 % / +6 % at
+  64k / 128k / 200k). A 30-minute soak with it on ran 14 requests up to 200k with 0 errors.
+- **Fix: empty replies.** Through the layer, a reply that `max_tokens` cut could come back with empty content: the
+  model had started writing its answer into the layer's Python tool, and the layer never shows a half-written tool
+  call. The layer now asks once more without its tool, so the reply has text. Such a reply can use up to twice
+  `max_tokens` of generation.
+- Checks on the zip: listed in the release receipt.
+
 ## bundle-20261019 (replay rollback, opt-in: MIRAI_RS_REPLAY=1)
 
 Same model file. New engine binaries (`1ee7f9766` = `cc1c1391b` + replay rollback) and launcher.
