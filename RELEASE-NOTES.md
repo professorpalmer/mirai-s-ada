@@ -111,6 +111,23 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261019 (replay rollback, opt-in: MIRAI_RS_REPLAY=1)
+
+Same model file. New engine binaries (`1ee7f9766` = `cc1c1391b` + replay rollback) and launcher.
+
+- **What it does:** speculative decoding on the model's 48 recurrent (gated delta net) layers keeps a 150 MiB snapshot
+  of the recurrent state per draft token, so that rejected draft tokens can be undone (draft 2: 449 MiB). With
+  `MIRAI_RS_REPLAY=1` the engine keeps one state and the inputs of the last draft tokens instead, and replays the
+  accepted ones at the next step (164 MiB). The launcher gives the freed VRAM to the KV cache: on the RTX 4070 the
+  VRAM line goes from 58,624 to 67,840 positions.
+- **The same text:** with replay on, the output is byte-identical to replay off (12 of 12 requests at 4k and 32k, 4 of
+  4 at 4k to 200k; the same draft counts).
+- **Measured (RTX 4070, decode of a 300-token answer):** 62.9 / 44.9 / 15.8 / 8.5 tok/s at 4k / 64k / 128k / 200k
+  without replay, 62.8 / 48.2 / 17.9 / 9.1 with it (+7 % / +14 % / +6 % from 64k on); a 30-minute soak with replay on
+  ran 14 requests up to 200k with 0 errors and at least 366 MiB of VRAM free.
+- Off by default in this bundle; the next bundle turns it on.
+- Checks on the zip: listed in the release receipt.
+
 ## bundle-20261018d (with the save after the answer on: a save after every answer)
 
 Same model file and engine (`cc1c1391b`). Only the layer changes.
