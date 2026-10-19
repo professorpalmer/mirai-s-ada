@@ -152,6 +152,14 @@ $Spec = if ($env:MIRAI_SPEC) { [int]$env:MIRAI_SPEC } elseif ($env:MIRAI_SPEC_TY
 # tail 3 37.0 / 17.8, tail 4 38.8 / 19.3 tok/s against 14.6 / 6.2 with no draft. Tail 2 costs nothing beyond what
 # drafting below the line already needs and moves the line up ~9k positions; MIRAI_SPEC_DEEP=4 buys +20% past it.
 $SpecDeep = if ($env:MIRAI_SPEC_DEEP) { [int]$env:MIRAI_SPEC_DEEP } else { 2 }
+# Replay rollback (an engine with LLAMA_RS_REPLAY; MIRAI_RS_REPLAY=1): the recurrent state keeps one plane instead of one
+# 150 MiB snapshot per rollback token; each rollback token then costs ~8 MiB (its conv snapshot and its inputs).
+$LlamaDll = ''
+try { $LlamaDll = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes((Join-Path $Bin 'llama.dll'))) } catch { }
+$Replay = $Spec -gt 0 -and $env:MIRAI_RS_REPLAY -eq '1' -and $LlamaDll.Contains('LLAMA_RS_REPLAY')
+if ($Replay) { $env:LLAMA_RS_REPLAY = '1' }
+elseif ($env:MIRAI_RS_REPLAY -eq '1') { Write-Host "note   MIRAI_RS_REPLAY=1 is off: $(if ($Spec -le 0) { 'drafting is off' } else { 'this engine has no replay rollback' })" }
+$SnapMiB = if ($Replay) { 8 } else { 150 }   # VRAM per rollback token
 $DraftWindow = if ($env:MIRAI_DRAFT_WINDOW) { [int]$env:MIRAI_DRAFT_WINDOW } else { 16384 }
 # MIRAI_SPEC_TYPE: mtp (default: the GGUF's own draft block, draft 2) or dflash (ggml-org's dflash-Qwen3.8-27B drafter,
 # draft 3). Measured 2026-10-06 (E22): dflash draft 3 decodes +13% at depth 0 and +8.5% at 16k (86 / 78 vs 76 / 72 tok/s),
@@ -244,7 +252,7 @@ if ($Tier) {
         $PoolMiB = if ($env:MIRAI_SHARED_POOL -ne '0') { -188 } else { 0 }   # E23 (mtp_q4_probe.log): POOL 11,151 vs BASE 11,339 at 40,960 cells
         # the mtpq4 file keeps 204 MiB less of weights resident (E23 POOLQ4 10,947): weights term 8,016 instead of 8,220
         $WeightsMiB = if ((Split-Path $Model -Leaf) -ieq 'Qwen3.8-27B-S-mirai-mtpq4.gguf') { 8016 } else { 8220 }
-        $FixedMiB = if ($env:MIRAI_FIXED_MIB) { [int]$env:MIRAI_FIXED_MIB } elseif ($Spec -gt 0 -and $SpecType -eq 'dflash') { $DflashFixed + 150 * $Depth + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } elseif ($Spec -gt 0) { $WeightsMiB + 150 * $Depth + 664 + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } else { $WeightsMiB + $UBatchMiB + $LevelsExtraMiB + $PoolMiB }
+        $FixedMiB = if ($env:MIRAI_FIXED_MIB) { [int]$env:MIRAI_FIXED_MIB } elseif ($Spec -gt 0 -and $SpecType -eq 'dflash') { $DflashFixed + $SnapMiB * $Depth + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } elseif ($Spec -gt 0) { $WeightsMiB + $SnapMiB * $Depth + 664 + $UBatchMiB + $LevelsExtraMiB + $PoolMiB } else { $WeightsMiB + $UBatchMiB + $LevelsExtraMiB + $PoolMiB }
         $FixedMiB += $MmprojMiB
         if ($SparsePage) { $FixedMiB += 64 }   # first-fill buffer and table headroom (Bonsai VRAM trace at 245k, docs/receipts/vram245_*.csv there)
         $Budget = ($FreeMiB - $Margin - $FixedMiB) * 1MB - $Ctx * $CellBytes / 16 - $Ctx * $SparseCellBytes
@@ -339,7 +347,7 @@ if ($Spec -gt 0) {
 }
 # the launcher sets these itself, and they stay in the window after a run: not the user's settings
 $Own = @('BONSAI_LAYER_KEY', 'BONSAI_SLOT_SAVE_PATH', 'LLAMA_ARG_CHAT_TEMPLATE_KWARGS', 'LLAMA_ARG_CHECKPOINT_EVERY_NT', 'GGML_CUDA_BATCH_INVARIANT', 'GGML_CUDA_SHARED_POOL',
-         'LLAMA_MTP_DRAFT_UBATCH', 'GGML_MIRAI_PREFILL_PLANES', 'GGML_MIRAI_LEVELS_MIB')
+         'LLAMA_MTP_DRAFT_UBATCH', 'GGML_MIRAI_PREFILL_PLANES', 'GGML_MIRAI_LEVELS_MIB', 'LLAMA_RS_REPLAY')
 $Listed = @($UserEnv | Where-Object { $_.Name -notin $Own -and $_.Value })
 if ($Listed.Count -gt 0) {
     Write-Host ("env    set in this window, these change the defaults: " + (($Listed | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join '  '))
