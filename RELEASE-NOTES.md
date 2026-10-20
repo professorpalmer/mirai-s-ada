@@ -113,6 +113,14 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261019d (images without a vision projector)
+
+Layer release: the `bin/` files of bundle-20261019c (engine `a45d177c0`).
+
+- **Images without mmproj:** when a client's tool returns an image (for example a screenshot) and the server runs
+  without a vision projector, the server refused every later request that still carried it (HTTP 500), so the session
+  was lost. The layer now replaces such an image with a short text note, and the model asks you to describe it.
+
 ## bundle-20261019c (a deeper draft past the VRAM line; the docs in the zip)
 
 Same model file. New engine binaries (engine commit `a45d177c0`).
