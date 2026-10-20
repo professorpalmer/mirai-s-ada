@@ -7,15 +7,15 @@
 <script>
 var DATA = {
   foot: [
-    'Left: RELEASE-NOTES.md bundle-20261019 (A/B of replay rollback, decode of a 300-token answer), the default since bundle-20261019b, 2026-10-19. VRAM lines from the same notes.',
+    'Left: receipts/tail4 (replay rollback on; a draft of 2 or 4 past the VRAM line; 300-token answers, the mean of story / code / quote), 2026-10-19. A draft of 4 is the default since bundle-20261019c.',
     'Right: RELEASE-NOTES.md bundle-20261016 (MIRAI_CTK=q3_0 against the q8_0 default in the same run, 262k window; VRAM line 58,624 -> 167,680). The two panels used different runs.',
     'RTX 4070 12 GB, q8_0 K/V, MTP and lookup drafting. The reference fork stops at a 64k window (docs/research/REPORT.md section 2).'
   ],
   window: 262144,
-  // decode tok/s at 4k / 64k / 128k / 200k, RELEASE-NOTES.md bundle-20261019
+  // decode tok/s at 4k / 64k / 128k / 200k, receipts/tail4 (the mean of the story / code / quote means)
   series: [
-    { name: 'replay rollback on (the default)', color: 'var(--serve)', points: [[4000, 62.8], [64000, 48.2], [128000, 17.9], [200000, 9.1]], vram: 67840 },
-    { name: 'replay rollback off', color: 'var(--ref)', points: [[4000, 62.9], [64000, 44.9], [128000, 15.8], [200000, 8.5]], vram: 58624 }
+    { name: 'draft of 4 past the line (the default)', color: 'var(--serve)', points: [[4000, 70.1], [64000, 60.9], [128000, 20.3], [200000, 10.3]], vram: 67328 },
+    { name: 'draft of 2 (bundle-20261019b, line 67,840)', color: 'var(--ref)', points: [[4000, 70.0], [64000, 56.7], [128000, 17.0], [200000, 8.4]], vram: null }
   ],
   refWindow: 65536,   // the reference fork: a 64k window at q8_0 (the first-comparison table in docs/speed/README.md, REPORT.md section 2)
   // MIRAI_CTK=q3_0 option, RELEASE-NOTES.md bundle-20261016: q8_0 21.7 / 12.9 / 9.6, q3_0 61.6 / 51.3 / 36.9 tok/s
@@ -41,7 +41,7 @@ var DATA = {
     foot: D.foot
   });
   // Left: the line chart
-  var left = panel(body, 'q8_0 cache, bundle-20261019', '1.75');
+  var left = panel(body, 'q8_0 cache, replay rollback, bundle-20261019c', '1.75');
   var W = 700, H = 330, L = 50, R = 20, T = 26, B = 36;
   var ymax = 0;
   D.series.forEach(function (s) { s.points.forEach(function (p) { ymax = Math.max(ymax, p[1]); }); });
@@ -63,6 +63,7 @@ var DATA = {
   // VRAM lines
   D.series.forEach(function (se, i) {
     var v = se.vram;
+    if (!v) return;   // a line 512 positions from the default line is in the legend, not drawn
     s.appendChild(el('line', { x1: x(v), x2: x(v), y1: T - 6, y2: H - B, stroke: se.color, 'stroke-dasharray': '6 5', 'stroke-width': 1.6 }));
     s.appendChild(el('text', { x: x(v) + (i ? -6 : 6), y: T + 6 + (i ? 0 : 0), 'text-anchor': i ? 'end' : 'start', style: 'font-size:13px;fill:' + se.color }, 'VRAM line ' + fmt(v)));
   });

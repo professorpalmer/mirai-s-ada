@@ -1,6 +1,6 @@
 # Quality: what the runtime controls, measured
 
-![Quality on the RTX 4070 12 GB, q8_0 K/V. HumanEval 164 at medium: raw 159, through the layer with the example check 160. Effort low / thinking off: raw 158 / 154, layer with thinking off 153. Exact-work suite 37 tasks: raw 18, layer 28. Coding family 7 to 12 of 24, computation family 4 to 15 of 15. q8_0 against f16: same top token 99.64 %, KL 0.00050. q3_0 at 245k: copies 20/20, lookups 24/24. AIME and MMLU-Pro: not measured](img/quality.png)
+![Quality on the RTX 4070 12 GB, q8_0 K/V. HumanEval 164 at medium: raw 159, through the layer 161. Effort low / thinking off: raw 158 / 154, layer with thinking off 153. Exact-work suite 37 tasks: raw 18, layer 28. Coding family 7 to 12 of 24, computation family 4 to 15 of 15. q8_0 against f16: same top token 99.64 %, KL 0.00050. q3_0: copies 20/20 and lookups 24/24 at 245k (raw), HumanEval 156 and workspace tasks 6/10 through the layer (q8_0: 161, 10/10). AIME and MMLU-Pro: not measured](img/quality.png)
 
 All runs on one RTX 4070 12 GB. Plans and gates were frozen before the results. Tests are executed: HumanEval runs
 each answer in a sandbox, and the suite checks the exact output of each task.
@@ -27,8 +27,10 @@ Greedy, tests run in a sandbox (`bench/humaneval_wasi.py`).
 | medium, bundle-20261014 (long prefill on tensor cores) | **159** (the five fails are a subset of the old six) | release notes, bundle-20261014 |
 | through the layer, medium | 158 | `receipts/mirai-port/humaneval.log` L0 (bundle-20261009) |
 | through the layer, medium, example check on (the default) | **160** (HumanEval/59 and /162 fixed, none lost, +23 % completion tokens) | `receipts/mirai-port/humaneval.log` L1 (bundle-20261009) |
+| through the layer, medium, bundle-20261019c (replay, a draft of 4 past the line) | **161** | [`receipts/kvq3`](../../receipts/kvq3/README.md) (2026-10-19) |
 | through the layer, thinking off | 153, with and without the stray-tag filter | release notes, bundle-20261017c / 20261017d |
 | `MIRAI_CTK=q3_0` | 157 (q8_0: 158) | release notes, bundle-20261016 |
+| `MIRAI_CTK=q3_0`, through the layer, bundle-20261019c | 156 (q8_0: 161; lost /32, /108, /118, /120, /150) | [`receipts/kvq3`](../../receipts/kvq3/README.md) |
 
 The bundle-20261014 change alters the float order of one prefill step, so long answers can differ in wording.
 
@@ -67,7 +69,9 @@ and puts single tokens far off. K/V stays q8_0, and `MIRAI_CTK=q4_0` is not reco
 
 **The q3_0 option** (`MIRAI_CTK=q3_0`, bundle-20261016). Against the q8_0 default: exact code copies 20/20 and fact
 lookups 24/24 at 245k (the same), HumanEval 157 (q8_0: 158), perplexity +0.87 % at 2k context. Its per-token
-divergence from an f16 cache is higher than q8_0's. Thus it is an option for long-context work, not the default.
+divergence from an f16 cache is higher than q8_0's. On bundle-20261019c through the layer
+([receipts/kvq3](../../receipts/kvq3/README.md)): HumanEval 156 against 161, the 37-item suite 26 against 27, but
+workspace tasks (multi-step tool work) 6 of 10 against 10 of 10. Thus it is an option for long-context work, not the default.
 Speed: [docs/speed](../speed/README.md#the-long-context-option-q3_0).
 
 ## Prompt numerics

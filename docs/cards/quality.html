@@ -6,14 +6,14 @@
 <script>
 var DATA = {
   foot: [
-    'HumanEval 164, greedy, tests run in a sandbox: medium 159 RELEASE-NOTES.md bundle-20261014; low 158 bench/humaneval/H2-low-20k; off 154 H3-off (2026-10-05/06); layer 160 receipts/mirai-port/humaneval.log L1 (bundle-20261009, 2026-10-09); layer, off 153 RELEASE-NOTES.md bundle-20261017c.',
+    'HumanEval 164, greedy, tests run in a sandbox: medium 159 RELEASE-NOTES.md bundle-20261014; low 158 bench/humaneval/H2-low-20k; off 154 H3-off (2026-10-05/06); layer 161 receipts/kvq3 (bundle-20261019c, 2026-10-19); layer, off 153 RELEASE-NOTES.md bundle-20261017c.',
     'Suite: bench/ML2b (37 tasks, 2026-10-05); coding over two seed sets: bench/E18-coding-layer + bench/ML2f-coding-s5-8 (docs/research/REPORT.md 6d, 2026-10-06). K/V: receipts/mirai-port/kv_kl.log (2026-10-09).',
-    'q3_0 option: RELEASE-NOTES.md bundle-20261016. AIME and MMLU-Pro: not run on this serve (docs/research/REPORT.md section 7).'
+    'q3_0 option: copies and lookups RELEASE-NOTES.md bundle-20261016; HumanEval and workspace tasks through the layer receipts/kvq3 (q8_0 161 and 10/10). AIME and MMLU-Pro: not run on this serve.'
   ],
   rows: [
     { label: 'HumanEval 164', note: 'medium',
       raw: { v: '159', unit: '/ 164' },                // RELEASE-NOTES.md bundle-20261014
-      layer: { v: '160', unit: '/ 164, example check' } }, // humaneval.log L1-layer-ec-medium (layer without the check: 158)
+      layer: { v: '161', unit: '/ 164' } },            // receipts/kvq3 arm q8 (2026-10-19; 160 on 2026-10-09, humaneval.log L1)
     { label: 'HumanEval 164', note: 'effort "low" / thinking off',
       raw: { v: '158 / 154' },                         // bench/humaneval/H2-low-20k, H3-off
       layer: { v: '153', unit: 'off; low not measured' } },          // RELEASE-NOTES.md bundle-20261017c / 17d (thinking off); low through the layer: not run
@@ -29,9 +29,9 @@ var DATA = {
     { label: 'q8_0 cache vs f16', note: 'same top token',
       raw: { v: '99.64 %', unit: 'KL 0.00050' },        // kv_kl.log
       layer: { t: 'the same cache' } },
-    { label: 'q3_0 option at 245k', note: 'copies · lookups',
+    { label: 'q3_0 option', note: 'raw: 245k copies · lookups',
       raw: { v: '20/20 · 24/24' },                     // RELEASE-NOTES.md bundle-20261016 (the same as q8_0)
-      layer: null },
+      layer: { v: '156 · 6/10', unit: 'HumanEval · workspace' } },  // receipts/kvq3 arm q3 (q8_0: 161 · 10/10)
     { label: 'AIME, MMLU-Pro',
       raw: null,
       layer: null }

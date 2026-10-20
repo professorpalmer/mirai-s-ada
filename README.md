@@ -1,6 +1,6 @@
 # Mirai S 27B on a 12 GB card: the full 262k window, drafting at every depth, and the layer
 
-![Scorecard, RTX 4070 12 GB, bundle-20261019b defaults: 262,144-token window with a q8_0 K/V cache, 67,840 positions in VRAM, decode 62.8 / 48.2 / 17.9 / 9.1 tok/s at 4k / 64k / 128k / 200k, a 16.8k prompt read at 1,090 tok/s, HumanEval 159 of 164, AppWorld 88.7 %, a 245k conversation back in 9.0 + 1.6 s after a restart. The reference fork on the same card: a 64k window, 39.6 tok/s at 4k, 33.5 at 60k](docs/img/scorecard.png)
+![Scorecard, RTX 4070 12 GB, bundle-20261019d defaults: 262,144-token window with a q8_0 K/V cache, 67,328 positions in VRAM, decode 70.1 / 60.9 / 20.3 / 10.3 tok/s at 4k / 64k / 128k / 200k (mean of three prompt types), a 16.8k prompt read at 1,090 tok/s, HumanEval 161 of 164 through the layer, AppWorld 88.7 %, a 245k conversation back in 9.0 + 1.6 s after a restart. The reference fork on the same card: a 64k window, 39.6 tok/s at 4k, 33.5 at 60k](docs/img/scorecard.png)
 
 This repository serves [Mirai S 27B](https://huggingface.co/trymirai/Qwen3.8-27B-S-experimental) from Mirai Labs on one
 RTX 4070 with 12 GB of VRAM. The model file is alesha-pro's

@@ -1,0 +1,18 @@
+2026-10-19 20:05 === kvq3: root <home>\AppData\Local\Temp/mroot-rel1019c, engine commit a45d177c0
+2026-10-19 20:06 server q8 (): health=1; window 262144 / q8_0|kv     tiered: cells 0..67328 in VRAM, 67328..262144 in system RAM (VRAM margin |spec   mtp draft 2 (4 past the VRAM line), draft window 16384 (drafting on); loo|layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-ser|
+Q1 q8: pass@1 98.17%  (161/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1384.5s
+Q1 q8: wrote bench/humaneval/KQ3-q8\summary.json
+2026-10-19 21:45 Q2 q8: | **total** | | **27/37** |
+ 
+ completion tokens: mirai-layer-q8 370,215
+ 
+2026-10-19 21:45 Q4 q8: CUDA errors 0; spill 0
+2026-10-19 21:45 server q3 (MIRAI_CTK=q3_0): health=1; window 262144 / q3_0|kv     tiered: cells 0..188416 in VRAM, 188416..262144 in system RAM (VRAM margi|spec   mtp draft 2 (4 past the VRAM line), draft window 16384 (drafting on); loo|layer  on: clients use :8080 (API cards, API check, sandboxed Python); llama-ser|
+Q1 q3: pass@1 95.12%  (156/164)  arm=medium effort=- temp=0.0 max_tokens=24576  1435.4s
+Q1 q3: wrote bench/humaneval/KQ3-q3\summary.json
+2026-10-19 23:34 Q2 q3: | **total** | | **26/37** |
+ 
+ completion tokens: mirai-layer-q3 364,643
+ 
+2026-10-19 23:34 Q4 q3: CUDA errors 0; spill 0
+2026-10-19 23:34 === kvq3 done

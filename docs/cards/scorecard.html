@@ -7,8 +7,8 @@
 var DATA = {
   // Small print under the card, one line per column.
   foot: [
-    'This serve: RTX 4070 12 GB, q8_0 K/V, defaults of bundle-20261019b. Positions in VRAM and decode (a 300-token answer, replay rollback on): RELEASE-NOTES.md bundle-20261019 / 20261019b, 2026-10-19.',
-    'Prompt read: receipts/mirai-port/levels_chunk.log, 2026-10-05. HumanEval: RELEASE-NOTES.md bundle-20261014. AppWorld: receipts/mirai-port/appworld.log, bundle-20261009, 2026-10-09. Restart: RELEASE-NOTES.md bundle-20261017.',
+    'This serve: RTX 4070 12 GB, q8_0 K/V, defaults of bundle-20261019d (replay rollback, a draft of 4 past the VRAM line). Positions in VRAM and decode (300-token answers, the mean of story / code / quote): receipts/tail4, 2026-10-19.',
+    'Prompt read: receipts/mirai-port/levels_chunk.log, 2026-10-05. HumanEval: through the layer, receipts/kvq3, 2026-10-19. AppWorld: receipts/mirai-port/appworld.log, bundle-20261009, 2026-10-09. Restart: RELEASE-NOTES.md bundle-20261017.',
     'Reference fork: same card, 64k q8_0 window, receipts/mirai-port/profile-stock-fork-q8-64k.txt (docs/research/REPORT.md section 2; bench/quick_tps.py, 400-token answers, another prompt set).'
   ],
   rows: [
@@ -17,22 +17,22 @@ var DATA = {
       serve: { v: '262,144', unit: 'tokens' } },         // start-server.ps1 default MIRAI_CTX
     { label: 'Positions in VRAM',
       ref: { t: 'all of its 64k window' },
-      serve: { v: '67,840', unit: 'of 262,144' } },     // RELEASE-NOTES.md bundle-20261019b (replay rollback on)
+      serve: { v: '67,328', unit: 'of 262,144' } },     // receipts/tail4 arm d4 (the bundle-20261019c launcher line)
     { label: 'Decode at 4k', note: 'tok/s',
       ref: { v: '39.6' },                                // profile-stock-fork-q8-64k.txt depth 4000, mean decode
-      serve: { v: '62.8' } },                            // RELEASE-NOTES.md bundle-20261019, replay on, 4k
+      serve: { v: '70.1' } },                            // receipts/tail4 d4, 4k: mean of story 55.2 / code 63.0 / quote 92.1
     { label: 'Decode at 64k', note: 'tok/s',
       ref: { v: '33.5', unit: 'at 60k' },                // profile-stock-fork-q8-64k.txt depth 60000, mean decode
-      serve: { v: '48.2' } },                            // RELEASE-NOTES.md bundle-20261019, replay on, 64k
+      serve: { v: '60.9' } },                            // receipts/tail4 d4, 64k: mean of 39.8 / 59.6 / 83.2
     { label: 'Decode at 128k / 200k', note: 'tok/s',
       ref: { t: 'past its 64k window' },
-      serve: { v: '17.9 / 9.1' } },                      // RELEASE-NOTES.md bundle-20261019, replay on, 128k / 200k
+      serve: { v: '20.3 / 10.3' } },                     // receipts/tail4 d4, 128k: 13.3 / 19.2 / 28.3; 200k: 7.0 / 10.3 / 13.7
     { label: 'Read a 16.8k prompt', note: 'tok/s',
       ref: { v: '~1,000' },                              // the first-comparison table in docs/speed/README.md (docs/research/PREFILL.md: ~1,000)
       serve: { v: '1,090' } },                           // levels_chunk.log L64, 2026-10-05 (the first-comparison table in docs/speed/README.md)
-    { label: 'HumanEval 164', note: 'medium',
+    { label: 'HumanEval 164', note: 'medium, layer',
       ref: null,
-      serve: { v: '159', unit: '/ 164' } },              // RELEASE-NOTES.md bundle-20261014 (greedy)
+      serve: { v: '161', unit: '/ 164' } },              // receipts/kvq3 arm q8 (bundle-20261019c root, through the layer)
     { label: 'AppWorld, 168 tasks', note: 'code agent',
       ref: null,
       serve: { v: '88.7 %', unit: 'task goals' } },       // receipts/mirai-port/appworld.log, aggregate task_goal_completion
@@ -55,7 +55,7 @@ var DATA = {
   });
   colTable(body, [
     { key: 'ref', name: 'The reference fork', sub: 'the starting point, same weights', color: COLOR.ref },
-    { key: 'serve', name: 'This serve', sub: 'bundle-20261019b defaults', color: COLOR.serve, focus: true, fr: '1.1fr' }
+    { key: 'serve', name: 'This serve', sub: 'bundle-20261019d defaults', color: COLOR.serve, focus: true, fr: '1.1fr' }
   ], DATA.rows);
 })();
 </script>
