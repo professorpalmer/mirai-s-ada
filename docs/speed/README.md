@@ -1,9 +1,9 @@
 # Speed: decode by depth and prompt reading
 
-![Decode by context depth on the RTX 4070 12 GB, bundle-20261019: 62.8 / 48.2 / 17.9 / 9.1 tok/s at 4k / 64k / 128k / 200k with replay rollback on (the default, VRAM line 67,840), 62.9 / 44.9 / 15.8 / 8.5 with it off (VRAM line 58,624). The MIRAI_CTK=q3_0 option, bundle-20261016: 61.6 / 51.3 / 36.9 tok/s at 128k / 192k / 245k against 21.7 / 12.9 / 9.6 for q8_0 in the same run](img/decode.png)
+![Decode by context depth on the RTX 4070 12 GB, replay rollback on, the mean of story / code / quote prompts: 70.1 / 60.9 / 20.3 / 10.3 tok/s at 4k / 64k / 128k / 200k with a draft of 4 past the VRAM line (the default since bundle-20261019c, line 67,328), 70.0 / 56.7 / 17.0 / 8.4 with a draft of 2 (line 67,840). The MIRAI_CTK=q3_0 option, bundle-20261016: 61.6 / 51.3 / 36.9 tok/s at 128k / 192k / 245k against 21.7 / 12.9 / 9.6 for q8_0 in the same run](img/decode.png)
 
-On one RTX 4070 12 GB the server decodes through the whole 262,144-token window. The first 67,840 positions of the
-cache are in VRAM (bundle-20261019b, display on the iGPU). Past that line, each step reads the rest of the cache from
+On one RTX 4070 12 GB the server decodes through the whole 262,144-token window. The first 67,328 positions of the
+cache are in VRAM (bundle-20261019c and newer, display on the iGPU). Past that line, each step reads the rest of the cache from
 system RAM over PCIe, and decode becomes slower.
 
 - [Decode by depth](#decode-by-depth)
@@ -19,15 +19,22 @@ display on the CPU's integrated graphics ([how](../setup/README.md#get-more-posi
 
 ## Decode by depth
 
-### The default (bundle-20261019b)
+### The default (bundle-20261019c and newer)
 
-RTX 4070 12 GB, q8_0 K/V, MTP and lookup drafting. Decode of a 300-token answer, tok/s
-([release notes](../../RELEASE-NOTES.md), bundle-20261019, 2026-10-19):
+RTX 4070 12 GB, q8_0 K/V, MTP and lookup drafting, replay rollback on. Decode of a 300-token answer, tok/s, the mean
+of the story / code / quote means (greedy and temperature 0.8), one server per arm
+([receipts/tail4](../../receipts/tail4/README.md), 2026-10-19):
 
 | depth | 4k | 64k | 128k | 200k |
 | --- | ---: | ---: | ---: | ---: |
-| replay rollback on (the default since bundle-20261019b), line 67,840 | 62.8 | 48.2 | 17.9 | 9.1 |
-| replay rollback off, line 58,624 | 62.9 | 44.9 | 15.8 | 8.5 |
+| a draft of 4 past the VRAM line (the default since bundle-20261019c), line 67,328 | 70.1 | 60.9 | 20.3 | 10.3 |
+| a draft of 2 past the line (bundle-20261019b), line 67,840 | 70.0 | 56.7 | 17.0 | 8.4 |
+
+By prompt type at 200k (draft of 4): story 7.0, code 10.3, quote 13.7. Single requests vary by up to 9.5 % from run to
+run ([receipts/tail4](../../receipts/tail4/README.md#result-2026-10-19-1951)).
+
+Replay rollback itself (bundle-20261019, a story prompt, a draft of 2): 62.8 / 48.2 / 17.9 / 9.1 tok/s on (line
+67,840) against 62.9 / 44.9 / 15.8 / 8.5 off (line 58,624) ([release notes](../../RELEASE-NOTES.md)).
 
 The text is the same with and without replay rollback (12 of 12 requests at 4k and 32k, 4 of 4 at 4k to 200k). A
 30-minute soak with it on ran 14 requests up to 200k with 0 errors. The release notes do not give the order of the
@@ -52,7 +59,8 @@ quality of q3_0: [quality](../quality/README.md#kv-cache-precision).
 | --- | --- | --- |
 | bundle-20261013 | CUDA graphs off for the steps that read the system-RAM part, so the K/V prefetch runs | mean decode 32k 65.7 -> 66.9, 128k 16.1 -> 18.8, 192k 10.5 -> 11.6 tok/s; HumanEval answers identical on all 164 |
 | bundle-20261014 | `MIRAI_SPARSE=1` (opt-in): sparse reads of the system-RAM pages with the highest score bound | mean decode at 192k 11.7 -> 16.2-17.0 tok/s, 128k about +20 %; exact copies and fact lookups (66 items at 160k / 200k / 245k) the same as the full read; the line about 5k positions shorter |
-| bundle-20261019b | replay rollback on by default | the table above |
+| bundle-20261019b | replay rollback on by default | story prompt: 128k 15.8 -> 17.9, 200k 8.5 -> 9.1 tok/s |
+| bundle-20261019c | a draft of 4 past the VRAM line (was 2) | mean of three prompt types: 128k +18.8 %, 200k +23.5 % ([receipts/tail4](../../receipts/tail4/README.md)) |
 
 Source: [release notes](../../RELEASE-NOTES.md).
 

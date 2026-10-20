@@ -42,6 +42,9 @@ This serve adds these items:
   ([saved conversations](../agents-layer/SAVED_CONVERSATIONS.md)).
 - **Replay rollback** (on by default since bundle-20261019b): the draft keeps one recurrent state, not one snapshot
   for each draft token. On the RTX 4070 the VRAM line goes from 58,624 to 67,840 positions. The output does not change.
+- **A draft of 4 past the VRAM line** (bundle-20261019c): with replay, a deeper draft costs ~8 MiB a token, so the
+  launcher drafts 4 past the line (was 2). The line is 67,328; 128k +18.8 %, 200k +23.5 %
+  ([receipts/tail4](../../receipts/tail4/README.md)).
 - What we took from [syv-ai/HyperQwen](https://github.com/syv-ai/HyperQwen) and what we measured:
   [HYPERQWEN.md](../research/HYPERQWEN.md).
 
@@ -86,7 +89,8 @@ measurements that a 12 GB card needs. Who made what: [CREDITS.md](../CREDITS.md)
 
    | Bundle | Positions in VRAM | Source |
    | --- | ---: | --- |
-   | bundle-20261019b (replay rollback on, the default) | 67,840 | [release notes](../../RELEASE-NOTES.md) |
+   | bundle-20261019c and newer (replay rollback on, a draft of 4 past the line, the default) | 67,328 | [receipts/tail4](../../receipts/tail4/README.md) |
+| bundle-20261019b (replay rollback on, a draft of 2) | 67,840 | [release notes](../../RELEASE-NOTES.md) |
    | bundle-20261016 to bundle-20261019 (replay rollback off) | 58,624 | release notes |
    | bundle-20261006c | 57,856 (approximately 51k with the published file) | `receipts/mirai-port/decode_by_depth.log`; the 51k value: the README of that bundle |
 
@@ -182,8 +186,9 @@ file. This project did not measure the vector on the suite.
   VRAM (measured before replay rollback). For this reason, the default keeps the MTP block for long agent sessions.
 - **Tool-heavy agents that need speed more than depth**: send `chat_template_kwargs: {"enable_thinking": false}` in
   each request (HumanEval 154/164 at 0.19x the tokens).
-- **Long-context work past the VRAM line**: `MIRAI_CTK=q3_0` (bundle-20261016 or newer) puts 2.9x the positions in
-  VRAM. It is an option, not the default ([quality](../quality/README.md#kv-cache-precision)).
+- **Long-context work past the VRAM line**: `MIRAI_CTK=q3_0` (bundle-20261016 or newer) puts 2.8x the positions in
+  VRAM (188,416 against 67,328). It is an option, not the default: through the layer it scored HumanEval 156 against
+  161 and 6 of 10 workspace tasks against 10 ([quality](../quality/README.md#kv-cache-precision)).
 
 All settings: [KNOBS.md](KNOBS.md).
 
@@ -219,8 +224,8 @@ drafting ([REPORT.md](../research/REPORT.md), sections 5b and 6e).
 
 - **12 GB is the minimum.** 8.2 GB of weights stay in VRAM. This model does not fit on an 8 GB card, and the launcher
   does not try.
-- **Past the VRAM line, the PCIe speed limits the decode.** The line is at 67,840 positions on a 12 GB card with the
-  display on the iGPU (bundle-20261019b; approximately 58k before replay rollback). The launcher calculates that a
+- **Past the VRAM line, the PCIe speed limits the decode.** The line is at 67,328 positions on a 12 GB card with the
+  display on the iGPU (bundle-20261019c; approximately 58k before replay rollback). The launcher calculates that a
   16 GB card moves the line to approximately 180k. This project did not measure that.
 - **Prefill is at the int8 limit of the card.** The trellis level decode and the int8 GEMM run at 191-233 TOPS of the
   233 TOPS dense peak. Approximately 1.1k tok/s on a 16.8k prompt is the speed of this card with these weights. An

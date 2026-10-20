@@ -1,0 +1,37 @@
+{"family": "coding", "name": "suite-tar-01", "seed": 1, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden2:result_schema"], "tokens": 12179, "responses": 12, "terminal": "response_cap", "wall_s": 158.5}
+{"family": "coding", "name": "suite-tar-01", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": [], "tokens": 7459, "responses": 12, "terminal": "response_cap", "wall_s": 98.9}
+{"family": "coding", "name": "suite-tar-01", "seed": 3, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema", "hidden2:result_schema"], "tokens": 7669, "responses": 12, "terminal": "response_cap", "wall_s": 113.6}
+{"family": "coding", "name": "suite-tar-01", "seed": 4, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema", "hidden2:result_schema"], "tokens": 7931, "responses": 12, "terminal": "response_cap", "wall_s": 100.5}
+{"family": "coding", "name": "xfer-zip-01", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": [], "tokens": 6351, "responses": 5, "terminal": "natural_stop", "wall_s": 91.3}
+{"family": "coding", "name": "xfer-zip-01", "seed": 2, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema"], "tokens": 9416, "responses": 12, "terminal": "response_cap", "wall_s": 130.2}
+{"family": "coding", "name": "xfer-zip-01", "seed": 3, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema"], "tokens": 5233, "responses": 12, "terminal": "response_cap", "wall_s": 75.4}
+{"family": "coding", "name": "xfer-zip-01", "seed": 4, "arm": "mirai-layer-q8", "ok": true, "detail": [], "tokens": 11214, "responses": 12, "terminal": "response_cap", "wall_s": 140.6}
+{"family": "coding", "name": "xfer-mime-01", "seed": 1, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema", "hidden2:date"], "tokens": 37630, "responses": 12, "terminal": "response_cap", "wall_s": 455.9}
+{"family": "coding", "name": "xfer-mime-01", "seed": 2, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema", "hidden2:unrecoverable_json"], "tokens": 13850, "responses": 12, "terminal": "response_cap", "wall_s": 185.5}
+{"family": "coding", "name": "xfer-mime-01", "seed": 3, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:unrecoverable_json", "hidden2:unrecoverable_json", "hidden3:invalid_request_not_rejected", "hidden4:invalid_request_not_rejected"], "tokens": 13984, "responses": 12, "terminal": "response_cap", "wall_s": 222.8}
+{"family": "coding", "name": "xfer-mime-01", "seed": 4, "arm": "mirai-layer-q8", "ok": false, "detail": ["hidden1:result_schema", "hidden2:unrecoverable_json"], "tokens": 30370, "responses": 12, "terminal": "response_cap", "wall_s": 379.3}
+{"family": "computation", "name": "knapsack", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 270 truth 270", "tokens": 1638, "runs": 2, "wall_s": 23.2}
+{"family": "computation", "name": "knapsack", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 161 truth 161", "tokens": 970, "runs": 2, "wall_s": 13.0}
+{"family": "computation", "name": "knapsack", "seed": 3, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 237 truth 237", "tokens": 1079, "runs": 1, "wall_s": 13.9}
+{"family": "computation", "name": "digits", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 54305 truth 54305", "tokens": 6049, "runs": 8, "wall_s": 108.2}
+{"family": "computation", "name": "digits", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 35671 truth 35671", "tokens": 700, "runs": 2, "wall_s": 13.1}
+{"family": "computation", "name": "digits", "seed": 3, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 159976 truth 159976", "tokens": 10463, "runs": 11, "wall_s": 163.1}
+{"family": "computation", "name": "lcs", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 17012 truth 17012", "tokens": 23355, "runs": 6, "wall_s": 324.7}
+{"family": "computation", "name": "lcs", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 16006 truth 16006", "tokens": 23911, "runs": 8, "wall_s": 339.6}
+{"family": "computation", "name": "lcs", "seed": 3, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 14009 truth 14009", "tokens": 12907, "runs": 12, "wall_s": 226.5}
+{"family": "computation", "name": "sales", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 3002244 truth 3002244", "tokens": 18657, "runs": 3, "wall_s": 95.9}
+{"family": "computation", "name": "sales", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 10 truth 10", "tokens": 7809, "runs": 1, "wall_s": 54.9}
+{"family": "computation", "name": "sales", "seed": 3, "arm": "mirai-layer-q8", "ok": false, "detail": "answer 1208946 truth 1245458", "tokens": 9400, "runs": 1, "wall_s": 71.2}
+{"family": "computation", "name": "weblog", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 1238271 truth 1238271", "tokens": 11190, "runs": 1, "wall_s": 72.5}
+{"family": "computation", "name": "weblog", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 24 truth 24", "tokens": 13772, "runs": 1, "wall_s": 90.2}
+{"family": "computation", "name": "weblog", "seed": 3, "arm": "mirai-layer-q8", "ok": true, "detail": "answer 4 truth 4", "tokens": 14734, "runs": 1, "wall_s": 116.4}
+{"family": "workspace", "name": "invoiceH", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 3598, "responses": 6, "wall_s": 53.9}
+{"family": "workspace", "name": "invoiceH", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 2120, "responses": 6, "wall_s": 35.2}
+{"family": "workspace", "name": "dedupeH", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 6176, "responses": 5, "wall_s": 82.0}
+{"family": "workspace", "name": "dedupeH", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 11622, "responses": 4, "wall_s": 145.7}
+{"family": "workspace", "name": "ledgerH", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 6708, "responses": 5, "wall_s": 86.2}
+{"family": "workspace", "name": "ledgerH", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 17321, "responses": 5, "wall_s": 219.5}
+{"family": "workspace", "name": "chain", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 527, "responses": 7, "wall_s": 9.3}
+{"family": "workspace", "name": "chain", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 510, "responses": 7, "wall_s": 9.2}
+{"family": "workspace", "name": "copy", "seed": 1, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 1140, "responses": 4, "wall_s": 18.5}
+{"family": "workspace", "name": "copy", "seed": 2, "arm": "mirai-layer-q8", "ok": true, "detail": "submitted; full_pass=True", "tokens": 573, "responses": 4, "wall_s": 8.6}
