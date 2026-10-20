@@ -113,6 +113,18 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261019c (a deeper draft past the VRAM line; the docs in the zip)
+
+Same model file. New engine binaries (engine commit `a45d177c0`).
+
+- **Draft 4 past the VRAM line, by default with replay rollback** (`start-server.ps1`; it was 2). With replay a draft
+  token costs ~8 MiB instead of a 150 MiB snapshot, so the deeper draft costs 512 positions of the line. RTX 4070:
+  decode at 128k +18.8 % and at 200k +23.5 % (the mean of a story, a code and a quote prompt; code and quote +20-33 %),
+  4k unchanged. `MIRAI_SPEC_DEEP=2` keeps the previous setting. `start-server.sh` has no replay and stays at 2.
+- **Fewer log lines past the VRAM line:** the CUDA graph line is written once per state, not at every decode step.
+- **The zip carries the docs** (`docs/`, with the cards); before, it had only the README, so its links did not work in
+  an install from the zip alone.
+
 ## bundle-20261019b (replay rollback on by default; replies cut at max_tokens are no longer empty)
 
 Same model file and engine (`1ee7f9766`).
