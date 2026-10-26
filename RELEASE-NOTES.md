@@ -113,6 +113,17 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261026 (faster attention at depth: the K/V tiles load ahead)
+
+Same model file. New engine binaries (engine commit `2c49257ea`, branch `serve/qkv-prefetch` = `a45d177c0` + one commit).
+
+- **Faster prefill and decode at depth, same output.** In the tensor-core attention kernel, with the q8_0 cache, each
+  thread now starts to read the K and V data of its next tile before the K·Q step, and the V data arrives while the
+  K·Q and softmax steps run. The arithmetic does not change: the logits are byte-identical to bundle-20261019d
+  (5 of 5 test cells, prompt batches and 1-8 token batches). RTX 4070, `llama-bench`: prompt batches at 32k / 64k of
+  context 1.034x / 1.058x, decode 1.009x / 1.014x. The same change is in the sister Bonsai serve (its patch 0072).
+- Launcher, layer and suite: unchanged.
+
 ## bundle-20261019d (images without a vision projector)
 
 Layer release: the `bin/` files of bundle-20261019c (engine `a45d177c0`).
