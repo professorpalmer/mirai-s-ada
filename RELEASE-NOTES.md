@@ -121,7 +121,7 @@ Same model file. New engine binaries (engine commit `2c49257ea`, branch `serve/q
   thread now starts to read the K and V data of its next tile before the K·Q step, and the V data arrives while the
   K·Q and softmax steps run. The arithmetic does not change: the logits are byte-identical to bundle-20261019d
   (5 of 5 test cells, prompt batches and 1-8 token batches). RTX 4070, `llama-bench`: prompt batches at 32k / 64k of
-  context 1.034x / 1.058x, decode 1.009x / 1.014x. The same change is in the sister Bonsai serve (its patch 0072).
+  context 1.034x / 1.058x, decode 1.009x / 1.014x. The same change is patch 0072 of the sister Bonsai serve.
 - Launcher, layer and suite: unchanged.
 
 ## bundle-20261019d (images without a vision projector)
