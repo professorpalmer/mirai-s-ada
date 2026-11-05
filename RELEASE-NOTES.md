@@ -113,6 +113,18 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261105 (no empty turns: the turn cannot end inside the think block)
+
+Same model file. New engine binaries (engine commit `2a024bcc1`, branch `serve/eog-think` = `2c49257ea` + one commit).
+
+- **No more reasoning-only turns.** Rarely (about 1 call in 300 in long agent sessions), the model sampled its
+  end-of-turn token before `</think>`. The client then got reasoning, no answer and no tool call, and agent harnesses
+  stopped the task there. Now, while the think block is open, the end-of-turn tokens cannot be sampled; the block still
+  closes by `</think>` or by the thinking budget, as before. The ban lives in the thinking-budget sampler, which the
+  launcher always turns on (budget 20,480); with `MIRAI_THINK_BUDGET=-1` it applies only to requests with tools. In our agent runs: 0 such turns in 1,276 calls. Greedy outputs that did not hit the fault do not
+  change; decode speed does not change.
+- Launcher, layer and suite: unchanged.
+
 ## bundle-20261026 (faster attention at depth: the K/V tiles load ahead)
 
 Same model file. New engine binaries (engine commit `2c49257ea`, branch `serve/qkv-prefetch` = `a45d177c0` + one commit).
