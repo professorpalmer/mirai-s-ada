@@ -120,7 +120,8 @@ Same model file. New engine binaries (engine commit `2a024bcc1`, branch `serve/e
 - **No more reasoning-only turns.** Rarely (about 1 call in 300 in long agent sessions), the model sampled its
   end-of-turn token before `</think>`. The client then got reasoning, no answer and no tool call, and agent harnesses
   stopped the task there. Now, while the think block is open, the end-of-turn tokens cannot be sampled; the block still
-  closes by `</think>` or by the thinking budget, as before. In our agent runs: 0 such turns in 1,276 calls. Greedy outputs that did not hit the fault do not
+  closes by `</think>` or by the thinking budget, as before. The ban lives in the thinking-budget sampler, which the
+  launcher always turns on (budget 20,480); with `MIRAI_THINK_BUDGET=-1` it applies only to requests with tools. In our agent runs: 0 such turns in 1,276 calls. Greedy outputs that did not hit the fault do not
   change; decode speed does not change.
 - Launcher, layer and suite: unchanged.
 
