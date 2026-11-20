@@ -225,6 +225,15 @@ $LevelsExtraMiB = [int](0.66 * ($LevelsMiB - 128))   # measured at load: 11,455 
 # ~490 of CUDA-side overhead): 9,184 at tail 2 (T2: 11,024 at load), 9,434-9,484 at tail 4 (C/T4: 11,314-11,324),
 # run-to-run noise ~50. With the 1,000 MiB headless margin that gives ~39.7k cells in VRAM at tail 2, ~31.5k at
 # tail 4, ~70k without drafting. MIRAI_FIXED_MIB overrides.
+# Guard (2026-11-20): with the tier on, the window is a multiple of 32,768 positions. Older engines wrote wrong V rows
+# past the VRAM line on prompt reads when it was not (one 2 MiB page held the end of K and the start of V); the engine
+# of this bundle has the fix; the guard keeps an older engine copied into bin\ safe too.
+if ($Tier -and ($Ctx % 32768) -ne 0) {
+    $CtxOld = $Ctx
+    $Ctx = [int]([math]::Ceiling($Ctx / 32768) * 32768)
+    if ($CtxOld -le 262144 -and $Ctx -gt 262144) { $Ctx = 262144 }
+    Write-Host "note   window $CtxOld rounded up to $Ctx (a multiple of 32,768 with the tiered K/V cache)"
+}
 $TierCells = 0
 [string[]]$TierArgs = @()
 $Margin = 0

@@ -298,6 +298,7 @@ class Proxy(http.server.BaseHTTPRequestHandler):
     repair_note = False   # default for "repair_note": a fixed sentence on failing tool results (E14 pending)
     round_note = False    # default for "round_note": the E19 countdown from the 8th tool round (off until measured)
     input_file = True     # default for "input_file": the user's text as input.txt for run_python (E12: adopted)
+    interpreter = True    # default for "code_interpreter" (requests without client tools); --no-interpreter: off
     slots = None          # slot_cache.SlotCache when BONSAI_SLOT_SAVE_PATH is set (saved conversations on disk)
     strip_stray_tags = True   # default for "strip_stray_tags": remove stray closing tags after an answer
     _strip_tags = False   # this request: set in do_POST
@@ -967,7 +968,7 @@ class Proxy(http.server.BaseHTTPRequestHandler):
         # data lives in paginated tool results, the model must retype it into code, and transcription errors cost
         # 2 of 15 tasks (1 rescued). Clients with tools can opt in with "code_interpreter": true.
         wanted = body.pop("code_interpreter", None)
-        enabled = (not client_tools) if wanted is None else bool(wanted)
+        enabled = (self.interpreter and not client_tools) if wanted is None else bool(wanted)
         ours_taken = any(t.get("function", {}).get("name") == TOOL_NAME for t in client_tools)
         if body.get("stream"):
             if enabled and not client_tools and not ours_taken:
@@ -1086,6 +1087,8 @@ if __name__ == "__main__":
     ap.add_argument("--repair-note", action="store_true", help="append a fixed sentence to failing tool results by default")
     ap.add_argument("--round-note", action="store_true", help="E19: append a round countdown to tool results from the 8th tool round")
     ap.add_argument("--no-input-file", action="store_true", help="do not give run_python the user's text as input.txt")
+    ap.add_argument("--no-interpreter", action="store_true",
+                    help="do not offer run_python by default (a request can still ask with \"code_interpreter\": true)")
     ap.add_argument("--no-strip-stray-tags", action="store_true",
                     help="do not remove stray closing tags after an answer by default")
     a = ap.parse_args()
@@ -1094,6 +1097,7 @@ if __name__ == "__main__":
     Proxy.keepalive = a.keepalive
     Proxy.cards, Proxy.lint = not a.no_cards, not a.no_lint
     Proxy.input_file = not a.no_input_file
+    Proxy.interpreter = not a.no_interpreter
     Proxy.repair_note = a.repair_note
     Proxy.round_note = a.round_note
     Proxy.finish_note = not a.no_finish_note
