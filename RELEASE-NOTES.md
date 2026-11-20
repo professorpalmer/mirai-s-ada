@@ -113,6 +113,32 @@ Same model file. New engine binaries (`0aad5de56`, sm_89) and a new launcher and
 - **Linux build:** the quick start uses `-DCMAKE_CUDA_ARCHITECTURES=native` and lets cmake find CUDA (issue #3, from
   Gotoro).
 
+## bundle-20261120 (background saves, a tier fix, an fp32 V-sum switch)
+
+Same model file. New engine binaries (engine commit `07ba0c539`, branch `serve/bundle-20261120` = `2a024bcc1` + four
+commits; the binaries print `403bf0317`, the same source tree before an edit of the commit messages), a launcher
+guard and two layer fixes.
+
+- **Saving a long conversation no longer holds the next turn.** With saves after the answer
+  (`MIRAI_SLOT_CACHE_AFTER=1`), the server now copies only what the next turn can change (the recurrent state, the
+  token list, the draft state) before it answers the save, and writes the file in the background, reading the K/V rows
+  where they are. The file appears under its final name only when it is complete. A save is restored the same way as
+  before. In our tests with this bundle (RTX 4070, a 179k-token conversation): the next turn started as fast with the
+  save in flight as without one (6.0 s and 6.2 s to the first token), the background file was byte-identical to a
+  synchronous save of the same state (6.4 GB, written at 605 MB/s), and after a restart it was restored with the same
+  answer. Measured on this engine: a server stopped in the middle of a write left no file that the layer would
+  restore.
+- **Delta saves after background saves.** The layer saves a delta (a few thousand tokens) after each later answer, as
+  intended; before this fix a background save could make the next save a full one.
+- **Tiered K/V: a fix for windows that are not a multiple of 32,768.** With the K/V tier on and such a window, prompt
+  reads could write wrong V rows past the VRAM line. The engine now writes back every host run of a redirected write.
+  The launcher also rounds the window up to a multiple of 32,768 when the tier is on (`MIRAI_CTX`), so an older
+  engine is safe too. The default window (262,144) does not change.
+- **`GGML_CUDA_FA_VKQ_F32=1` (off by default): fp32 sums of V in the tensor-core attention kernel.** The default fp16
+  sum loses a little output length in wide heads at depth; the switch removes that at a speed cost. Default
+  unchanged.
+- Layer: `--no-interpreter` turns the run_python offer off (default: on, as before).
+
 ## bundle-20261105 (no empty turns: the turn cannot end inside the think block)
 
 Same model file. New engine binaries (engine commit `2a024bcc1`, branch `serve/eog-think` = `2c49257ea` + one commit).

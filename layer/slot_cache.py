@@ -123,6 +123,9 @@ class SlotCache:
         self.compact = None            # (conversation key, auth) of a chain that wants a full save when idle
         self.t_active = time.time()    # the end of the last chat request
         self.delta_ok = None           # the server takes "pos_min" / "append" (GET /props slot_save_delta); None: not asked
+        self.async_ok = None           # the server takes "async": true for saves (GET /props slot_save_async); None: not asked
+        self.async_on = os.environ.get("BONSAI_SLOT_SAVE_ASYNC", "1") != "0"   # background saves after the answer
+        self.tmp_n = 0                 # a new temp name for each save (a background save may still be in flight)
         self.min_gain = int(min_gain)   # restore only when it saves at least this many tokens of reading (~15-25 s at depth)
         self.min_tokens, self.grow, self.budget = int(min_tokens), int(grow), float(budget_gb) * 2**30
         self.log = log or (lambda *a: sys.stderr.write("[slots] " + " ".join(str(x) for x in a) + "\n"))
@@ -488,6 +491,58 @@ class SlotCache:
         a.frombytes(open(self._files(sha)[2], "rb").read())
         return list(a)
 
+    def _async_ok(self, auth):
+        if self.async_ok is None:
+            try:
+                self.async_ok = bool((self._get("/props", auth) or {}).get("slot_save_async"))
+            except Exception:
+                self.async_ok = False
+            self.log("background saves", "on" if (self.async_ok and self.async_on) else "off (server or BONSAI_SLOT_SAVE_ASYNC=0)")
+        return self.async_ok and self.async_on
+
+    def _finish_async(self, tmp, parent, toks, key, old_chain, auth, t1, held_ref=None):
+        """A background save after the answer: wait (without the lock) until the server has written the file, then index
+        it under the lock, as the synchronous path does. A failed or lost write leaves no index entry."""
+        state, st = "pending", {}
+        t_end = time.time() + 1800
+        while time.time() < t_end:
+            try:
+                st = self._post("/slots/0?action=save_status", {"filename": tmp}, auth, timeout=30) or {}
+                state = st.get("state", "unknown")
+            except Exception as e:
+                state, st = "unknown", {"error": repr(e)}
+            if state != "pending":
+                break
+            time.sleep(0.1)
+        with self.lock:
+            try:
+                if state != "done":
+                    raise ValueError("background save %s: %s %s" % (tmp, state, st.get("error", "")))
+                saved = read_tokens(os.path.join(self.folder, tmp))
+                if parent:
+                    if parent not in self.index:
+                        raise ValueError("the parent of the delta was removed while it was written")
+                    saved = self._toks_of(parent) + saved
+                if len(saved) <= len(toks) or saved[:len(toks)] != toks:
+                    raise ValueError("the slot does not extend the request's tokens (%d tokens)" % len(saved))
+                sha, size = self._store(tmp, saved, parent)
+                if old_chain:
+                    self._drop([x for x in old_chain if x != sha], "replaced (budget)")
+                self._add_tip(key, sha)
+                if held_ref is not None and self.held is held_ref:   # no request since the answer: the slot holds this save
+                    self.held = saved
+                self.log("saved after the answer (background)", sha[:12], len(saved), "tokens:", round(time.time() - t1, 2),
+                         "s, copy", st.get("copy_ms"), "ms, write", st.get("write_ms"), "ms,", st.get("n_written"), "bytes",
+                         ("delta of %d" % self.index[parent]["n"]) if parent else "full")
+                self._evict()
+            except Exception as e:
+                self.log("save after the answer failed:", repr(e))
+                for f in (tmp, tmp + ".draft"):
+                    try:
+                        os.remove(os.path.join(self.folder, f))
+                    except OSError:
+                        pass
+
     def _delta_ok(self, auth):
         if self.delta_ok is None:
             try:
@@ -498,7 +553,8 @@ class SlotCache:
         return self.delta_ok and self.chain > 0
 
     def _tmp(self):
-        tmp = PREFIX + "saving-%d.bin" % os.getpid()
+        self.tmp_n += 1
+        tmp = PREFIX + "saving-%d-%d.bin" % (os.getpid(), self.tmp_n)
         for p in (tmp, tmp + ".draft"):   # a stale sidecar from a crashed save must not be renamed with this one
             try:
                 os.remove(os.path.join(self.folder, p))
@@ -715,7 +771,18 @@ class SlotCache:
                 body = {"filename": tmp}
                 if parent:
                     body["pos_min"] = self.index[parent]["n"]
+                bg = self._async_ok(auth)
+                if bg:
+                    body["async"] = True
                 r = self._post("/slots/0?action=save", body, auth)
+                if bg and r.get("pending"):
+                    # the server copied the state and answers now; a thread indexes the save when the file is written
+                    threading.Thread(target=self._finish_async,
+                                     args=(tmp, parent, list(toks), last["key"], old_chain, auth, t1, self.held), daemon=True).start()
+                    info.update(pending=True, delta_of=self.index[parent]["n"] if parent else None,
+                                copy_s=round(time.time() - t1, 2), n_saved=r.get("n_saved"), copy_bytes=r.get("n_written"))
+                    info["s"] = round(time.time() - t0, 2)
+                    return info
                 saved = read_tokens(os.path.join(self.folder, tmp))
                 if parent:   # the file holds the tokens from pos_min on
                     saved = self._toks_of(parent) + saved

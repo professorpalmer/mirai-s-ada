@@ -24,3 +24,14 @@ Mirai changes above stay as they are. The module still reads `BONSAI_SLOT_SAVE_P
 (`</think>`, `</parameter>`, `</function>`, `</tool_call>`) that the model can print after an answer when the
 prompt has a tool block, thinking is off and the prompt is long. Only answers without tool calls, never inside a code
 fence; `"strip_stray_tags": false` turns it off for a request. Generic, to be offered back to the Bonsai layer.
+
+2026-11-20 (bundle-20261120, layer fixes measured on this engine):
+- Background saves after the answer: when the server reports `slot_save_async` (engine with the background save), the
+  layer sends `"async": true`, releases its lock at once, and indexes the save in a thread when the server reports the
+  write done (`/slots/0?action=save_status`). A failed or lost write leaves no index entry. `BONSAI_SLOT_SAVE_ASYNC=0`
+  turns it off. Temp names are unique per save.
+- Delta parent fix: after a background save the layer's `held` tokens become the saved tokens when no request came in
+  between, so the next turn's save is a delta of it (without the fix every later save was full).
+- `--no-interpreter` (Proxy.interpreter): the run_python offer can be turned off (default on, as before). Known
+  limit: when a turn's last round runs without the tool block (a cut retry at max_tokens, or the final round), the
+  slot holds a prompt without the tool block and the next turn's prompt has it, so the next save is a full save.

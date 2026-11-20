@@ -14,6 +14,12 @@ MODEL="${MIRAI_MODEL:-$ROOT/models/Qwen3.8-27B-S-mirai.gguf}"
 PORT="${MIRAI_PORT:-8080}"
 HOST="${MIRAI_HOST:-127.0.0.1}"
 CTX="${MIRAI_CTX:-262144}"
+# with the tier on, the window is a multiple of 32,768 positions (see start-server.ps1, guard of 2026-11-20)
+if [ "${MIRAI_TIER:-1}" = 1 ] && [ $((CTX % 32768)) -ne 0 ]; then
+  CTX_OLD=$CTX; CTX=$(( (CTX + 32767) / 32768 * 32768 ))
+  [ "$CTX_OLD" -le 262144 ] && [ "$CTX" -gt 262144 ] && CTX=262144
+  echo "note: window $CTX_OLD rounded up to $CTX (a multiple of 32,768 with the tiered K/V cache)"
+fi
 CTK="${MIRAI_CTK:-q8_0}"
 CELLS="${MIRAI_KV_VRAM_CELLS:-44000}"
 SPEC="${MIRAI_SPEC:-2}"
