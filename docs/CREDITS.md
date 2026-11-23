@@ -34,6 +34,9 @@ The layer and the suite were first written for
   The engine tree keeps their notices. The Mirai S codec is the work of Mirai Labs. The ggml and CUDA kernels for the
   codec in the engine come from the port by alesha-pro. The commit history and `engine/README.md` record this
   attribution.
+- The built-in web chat page (llama.cpp tools/ui) and the npm code in it: [`licenses/web-ui-THIRD-PARTY.txt`](../licenses/web-ui-THIRD-PARTY.txt)
+  (each package with its licence and copyright text; MIT, ISC, BSD-3-Clause, Apache-2.0, MPL-2.0 OR Apache-2.0,
+  Unlicense; no GPL).
 - This repository does not redistribute the model weights. The model is
   [`trymirai/Qwen3.8-27B-S-experimental`](https://huggingface.co/trymirai/Qwen3.8-27B-S-experimental) from Mirai Labs,
   a quantization of Qwen3.8-27B from Alibaba. `Qwen3.8-27B-S-mirai-GGUF` is the community conversion of that model by
